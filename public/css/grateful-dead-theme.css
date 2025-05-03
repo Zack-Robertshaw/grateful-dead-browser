@@ -113,3 +113,29 @@
     background-color: var(--gd-secondary);
     color: white;
   }
+
+/* Hampton Ticket button styling */
+.hampton-ticket-button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  max-width: 100%;
+  display: block;
+}
+
+.hampton-ticket-button:hover {
+  transform: translateY(-5px) scale(1.02);
+  filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3));
+}
+
+.hampton-ticket-button:active {
+  transform: translateY(2px);
+}
+
+.hampton-ticket-button img {
+  width: 100%;
+  height: auto;
+  max-width: 600px;
+}
