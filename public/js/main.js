@@ -322,48 +322,64 @@ const showBrowserElements = {
     }
   }
   
-  // Play concert with VLC
-  async function playConcert() {
-    try {
-      if (currentPlaylist.length === 0) {
-        alert('No audio files to play');
-        return;
-      }
-      
-      showBrowserElements.playConcert.textContent = 'Starting player...';
-      showBrowserElements.playConcert.disabled = true;
-      
-      const response = await fetch('/api/play-concert', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          filePaths: currentPlaylist
-        })
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        showBrowserElements.playConcert.textContent = data.message;
-        setTimeout(() => {
-          showBrowserElements.playConcert.textContent = 'Click here to Roll Away the Dew';
-          showBrowserElements.playConcert.disabled = false;
-        }, 3000);
-      } else {
-        alert(data.error || 'Error playing concert');
-        showBrowserElements.playConcert.textContent = 'Click here to Roll Away the Dew';
-        showBrowserElements.playConcert.disabled = false;
-      }
-    } catch (error) {
-      console.error('Error playing concert:', error);
-      alert(`Error playing concert: ${error.message}`);
-      showBrowserElements.playConcert.textContent = 'Click here to Roll Away the Dew';
-      showBrowserElements.playConcert.disabled = false;
+// Play concert with VLC
+async function playConcert() {
+  try {
+    if (currentPlaylist.length === 0) {
+      alert('No audio files to play');
+      return;
     }
+    
+    // Get the button and store original content
+    const playButton = showBrowserElements.playConcert;
+    const originalContent = playButton.innerHTML;
+    
+    // Add overlay and disable button
+    playButton.disabled = true;
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.position = 'relative';
+    buttonContainer.innerHTML = originalContent + 
+      '<div class="overlay">Starting player...</div>';
+    playButton.innerHTML = '';
+    playButton.appendChild(buttonContainer);
+    
+    // Make the API call to play the concert
+    const response = await fetch('/api/play-concert', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        filePaths: currentPlaylist
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      // Update overlay with success message
+      const overlay = playButton.querySelector('.overlay');
+      if (overlay) {
+        overlay.textContent = 'Now Playing...';
+      }
+      
+      // Remove overlay and re-enable button after delay
+      setTimeout(() => {
+        playButton.innerHTML = originalContent;
+        playButton.disabled = false;
+      }, 3000);
+    } else {
+      alert(data.error || 'Error playing concert');
+      playButton.innerHTML = originalContent;
+      playButton.disabled = false;
+    }
+  } catch (error) {
+    console.error('Error playing concert:', error);
+    alert(`Error playing concert: ${error.message}`);
+    playButton.innerHTML = originalContent;
+    playButton.disabled = false;
   }
-  
+}  
   // Event Listeners
   document.addEventListener('DOMContentLoaded', async () => {
     // Check if analysis data is available
