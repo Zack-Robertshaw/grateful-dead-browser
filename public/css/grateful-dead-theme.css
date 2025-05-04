@@ -1,118 +1,180 @@
+
 :root {
-    /* Grateful Dead Color Palette */
-    --gd-primary: #1a936f;      /* Vibrant green (keeping your existing green) */
-    --gd-secondary: #6b5ca5;    /* Purple - common in GD artwork */
-    --gd-accent: #da344d;       /* Red - part of the signature Steal Your Face logo */
-    --gd-background: #f2f0e6;   /* Vintage paper/parchment feel */
-    --gd-text: #2b2b2b;         /* Near black for readability */
-    --gd-light-accent: #f6ae2d; /* Gold/amber - for highlights */
-    --gd-dark-accent: #3d315b;  /* Deep purple - for shadows and depth */
-  }
-  
-  /* Base styles */
-  body {
-    background-color: var(--gd-background);
-    color: var(--gd-text);
-  }
-  
-  /* Header styling */
-  h1, h2, h3, h4, h5, h6 {
-    color: var(--gd-dark-accent);
-  }
-  
-  /* Navigation tabs */
-  .nav-tabs .nav-link {
-    color: var(--gd-secondary);
-    border-color: var(--gd-secondary);
-    transition: all 0.3s ease;
-  }
-  
-  .nav-tabs .nav-link:hover {
-    background-color: rgba(107, 92, 165, 0.1);
-  }
-  
-  .nav-tabs .nav-link.active {
-    background-color: var(--gd-secondary);
-    color: white;
-    border-color: var(--gd-secondary);
-  }
-  
-  /* Button styles */
-  .btn-primary {
-    background-color: var(--gd-primary);
-    border-color: var(--gd-primary);
-  }
-  
-  .btn-primary:hover {
-    background-color: #157a58;
-    border-color: #157a58;
-  }
-  
-  .btn-success {
-    background-color: var(--gd-light-accent);
-    border-color: var(--gd-light-accent);
-    color: var(--gd-text);
-  }
-  
-  .btn-success:hover {
-    background-color: #e09c1e;
-    border-color: #e09c1e;
-    color: var(--gd-text);
-  }
-  
-  /* Card styling */
-  .card {
-    border-color: var(--gd-secondary);
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
-  }
-  
-  .card-body {
-    background-color: white;
-  }
-  
-  .card-header {
-    background-color: var(--gd-secondary);
-    color: white;
-  }
-  
-  /* Enhanced ticket-button styling */
-  .ticket-button {
-    background: linear-gradient(145deg, var(--gd-primary) 0%, #157a58 100%) !important;
-    border: 2px dashed rgba(255, 255, 255, 0.7) !important;
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3) !important;
-  }
-  
-  .ticket-button:hover {
-    background: linear-gradient(145deg, #157a58 0%, var(--gd-primary) 100%) !important;
-    transform: translateY(-5px) !important;
-  }
-  
-  /* Text file and track list containers */
-  .text-file-content, .track-list {
-    border: 1px solid var(--gd-secondary);
-    border-radius: 5px;
-  }
-  
-  /* Form controls */
-  .form-control:focus {
-    border-color: var(--gd-secondary);
-    box-shadow: 0 0 0 0.25rem rgba(107, 92, 165, 0.25);
-  }
-  
-  /* Badges for audio format counts */
-  .badge.bg-secondary {
-    background-color: var(--gd-secondary) !important;
-  }
-  
-  /* Tables */
-  .table-striped tbody tr:nth-of-type(odd) {
-    background-color: rgba(107, 92, 165, 0.05);
-  }
-  
-  .table thead th {
-    background-color: var(--gd-secondary);
-    color: white;
-  }
+  /* Grateful Dead Color Palette */
+  --gd-primary: #1a936f;      /* Vibrant green (keeping your existing green) */
+  --gd-secondary: #6b5ca5;    /* Purple - common in GD artwork */
+  --gd-accent: #da344d;       /* Red - part of the signature Steal Your Face logo */
+  --gd-background: #f2f0e6;   /* Vintage paper/parchment feel */
+  --gd-text: #2b2b2b;         /* Near black for readability */
+  --gd-light-accent: #f6ae2d; /* Gold/amber - for highlights */
+  --gd-dark-accent: #3d315b;  /* Deep purple - for shadows and depth */
+}
+
+/* Base styles */
+body {
+  color: var(--gd-text);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Header styling */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--gd-dark-accent);
+  font-weight: 600;
+}
+
+/* Navigation tabs */
+.nav-tabs {
+  border-bottom: 3px solid var(--gd-secondary);
+}
+
+.nav-tabs .nav-link {
+  color: var(--gd-secondary);
+  border-color: var(--gd-secondary);
+  border-width: 2px;
+  transition: all 0.3s ease;
+  margin-right: 5px;
+  border-radius: 10px 10px 0 0;
+  font-weight: 600;
+}
+
+.nav-tabs .nav-link:hover {
+  background-color: rgba(107, 92, 165, 0.2);
+  transform: translateY(-3px);
+}
+
+.nav-tabs .nav-link.active {
+  background-color: var(--gd-secondary);
+  color: white;
+  border-color: var(--gd-secondary);
+  transform: translateY(-3px);
+}
+
+/* Button styles */
+.btn-primary {
+  background-color: var(--gd-primary);
+  border-color: var(--gd-primary);
+  border-radius: 8px;
+  padding: 0.5rem 1.5rem;
+  font-weight: 600;
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: #157a58;
+  border-color: #157a58;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-success {
+  background-color: var(--gd-light-accent);
+  border-color: var(--gd-light-accent);
+  color: var(--gd-text);
+  border-radius: 8px;
+  padding: 0.5rem 1.5rem;
+  font-weight: 600;
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.btn-success:hover {
+  background-color: #e09c1e;
+  border-color: #e09c1e;
+  color: var(--gd-text);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Form elements */
+.form-control, .form-select {
+  border-radius: 8px;
+  border: 2px solid #ddd;
+  padding: 0.5rem 1rem;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--gd-secondary);
+  box-shadow: 0 0 0 0.25rem rgba(107, 92, 165, 0.25);
+}
+
+/* Card styling */
+.card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card-body {
+  background-color: white;
+  padding: 1.5rem;
+}
+
+.card-title {
+  color: var(--gd-secondary);
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+/* Enhanced ticket-button styling */
+.ticket-button {
+  background: linear-gradient(145deg, var(--gd-primary) 0%, #157a58 100%) !important;
+  border: 2px dashed rgba(255, 255, 255, 0.7) !important;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+.ticket-button:hover {
+  background: linear-gradient(145deg, #157a58 0%, var(--gd-primary) 100%) !important;
+  transform: translateY(-5px) !important;
+}
+
+/* Text file and track list containers */
+.text-file-content, .track-list {
+  border: 1px solid var(--gd-secondary);
+  border-radius: 10px;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Badges for audio format counts */
+.badge.bg-secondary {
+  background-color: var(--gd-secondary) !important;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  border-radius: 20px;
+}
+
+/* Tables */
+.table {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.table thead th {
+  background-color: var(--gd-secondary);
+  color: white;
+  padding: 1rem;
+  font-weight: 600;
+  border: none;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(107, 92, 165, 0.05);
+}
+
+.table tbody td {
+  padding: 0.75rem 1rem;
+  vertical-align: middle;
+  border-color: rgba(107, 92, 165, 0.1);
+}
 
 /* Hampton Ticket button styling */
 .hampton-ticket-button {
@@ -120,14 +182,17 @@
   border: none;
   padding: 0;
   cursor: pointer;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, filter 0.3s ease;
   max-width: 100%;
   display: block;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 .hampton-ticket-button:hover {
   transform: translateY(-5px) scale(1.02);
-  filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3));
+  filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.4));
 }
 
 .hampton-ticket-button:active {
@@ -138,4 +203,44 @@
   width: 100%;
   height: auto;
   max-width: 600px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+/* Alert styling */
+.alert {
+  border-radius: 10px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+  border: none;
+}
+
+.alert-success {
+  background-color: rgba(26, 147, 111, 0.2);
+  color: var(--gd-primary);
+  border-left: 5px solid var(--gd-primary);
+}
+
+/* Custom animated tabs */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tab-pane.fade.show {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+/* Loading indicators */
+.loading {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(107, 92, 165, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--gd-secondary);
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
