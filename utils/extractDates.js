@@ -13,21 +13,28 @@ function extractDatesFromFolders(rootDirectory) {
   
   // Define date patterns to match various formats
   const datePatterns = [
-    // Original formats with word boundary after the date part
+    // Original formats
     /gd(\d{2})-(\d{2})-(\d{2})(?:\b|\.)/,      // gd82-09-20 (YY-MM-DD)
     /gd(\d{4})-(\d{2})-(\d{2})(?:\b|\.)/,      // gd1981-02-26 (YYYY-MM-DD)
-    
-    // New formats without prefixes
     /(?:^|\b)(\d{4})-(\d{2})-(\d{2})(?:\b|\.)/,  // 1972-10-18 (YYYY-MM-DD)
     /(?:^|\b)(\d{2})-(\d{2})-(\d{2})(?:\b|\.)/,  // 72-10-18 (YY-MM-DD)
-    
-    // Additional potential formats
     /(?:^|\b)(\d{2})\.(\d{2})\.(\d{2})(?:\b|\.)/,  // 72.10.18 (YY.MM.DD)
     /(?:^|\b)(\d{4})\.(\d{2})\.(\d{2})(?:\b|\.)/,  // 1972.10.18 (YYYY.MM.DD)
     /(?:^|\b)(\d{2})_(\d{2})_(\d{2})(?:\b|\.)/,    // 72_10_18 (YY_MM_DD)
-    /(?:^|\b)(\d{4})_(\d{2})_(\d{2})(?:\b|\.)/ // 1972_10_18 (YYYY_MM_DD)
+    /(?:^|\b)(\d{4})_(\d{2})_(\d{2})(?:\b|\.)/, // 1972_10_18 (YYYY_MM_DD)
+    
+    // New patterns
+    /gd(\d{2})-(\d{2})-(\d{2})sbd/,      // gd68-11-01sbd
+    /gd(\d{4})-(\d{2})-(\d{2})sbd/,      // gd1970-11-23sbd
+    /gd(\d{2})-(\d{1})-(\d{2})sbd/,      // gd70-3-24sbd (single digit month)
+    /gd(\d{2})-(\d{2})-(\d{2})(?:acoustic|set\d)/,  // gd70-06-06acoustic, gd72-05-07set1
+    /(\d{4})(?:\s+\w+\s+-\s+)(\d{1,2})-(\d{2})-(\d{2})/,  // 1969 Extravaganza - 4-06-69
+    /gd(\d{4})-(\d{2})-(\d{2})d\d/,      // gd1977-04-27d1
+    /gd(\d{4})\.(\d{2})\.(\d{2})(?:\.GEMS|\.SBD)/,  // gd1972.05.23.GEMS.SBD
+    /gd(\d{2})-(\d{2})-(\d{2})set\d/,    // gd77-05-01set2
+    /jg(\d{4})-(\d{2})-(\d{2})/,         // jg1976-01-09 (Jerry Garcia)
   ];
-  
+    
   // Simple pattern to identify year-only folders to handle separately
   const yearOnlyPattern = /^(19\d{2}|20\d{2})$/;
   
