@@ -22,6 +22,11 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
 }
 
+/* The area behind the tabs */
+.nav-tabs-container {
+  background-color: #2b2b2b; /* Replace with your desired color */
+}
+
 /* Navigation tabs */
 .nav-tabs {
   border-bottom: 3px solid var(--gd-secondary);
