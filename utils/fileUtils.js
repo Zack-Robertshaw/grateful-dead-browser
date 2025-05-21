@@ -1,6 +1,20 @@
 // utils/fileUtils.js
-const fs = require('fs-extra');
+const fs = require('fs');
 const path = require('path');
+
+// Simple cache implementation
+const dirCache = new Map();
+const CACHE_TTL = 5000; // 5 seconds
+
+function getCachedDirContents(dir) {
+  const cached = dirCache.get(dir);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.contents;
+  }
+  const contents = fs.readdirSync(dir, { withFileTypes: true });
+  dirCache.set(dir, { contents, timestamp: Date.now() });
+  return contents;
+}
 
 /**
  * Find all text files in a folder path and its immediate subfolders
@@ -16,40 +30,51 @@ function findTextFiles(folderPath) {
     return textFiles;
   }
   
-  // Function to process a directory
-  function processDirectory(dir, isRoot) {
-    try {
-      const items = fs.readdirSync(dir);
+  try {
+    // Get root directory contents
+    const rootItems = getCachedDirContents(folderPath);
+    
+    // Process root files and collect subdirectories
+    const subdirs = [];
+    
+    for (const item of rootItems) {
+      const itemPath = path.join(folderPath, item.name);
+      
+      if (item.isFile() && path.extname(item.name).toLowerCase() === '.txt') {
+        const stats = fs.statSync(itemPath);
+        textFiles.push({
+          filename: item.name,
+          full_path: itemPath,
+          relative_path: item.name,
+          size: stats.size,
+          location: "root"
+        });
+      } else if (item.isDirectory()) {
+        subdirs.push(itemPath);
+      }
+    }
+    
+    // Process immediate subdirectories
+    for (const subdir of subdirs) {
+      const items = getCachedDirContents(subdir);
       
       for (const item of items) {
-        const itemPath = path.join(dir, item);
-        const stats = fs.statSync(itemPath);
-        
-        if (stats.isFile() && path.extname(item).toLowerCase() === '.txt') {
-          const relativePath = path.relative(folderPath, itemPath);
-          
-          // Determine if it's in the root or a subfolder
-          const location = isRoot ? "root" : "subfolder";
-          
+        if (item.isFile() && path.extname(item.name).toLowerCase() === '.txt') {
+          const itemPath = path.join(subdir, item.name);
+          const stats = fs.statSync(itemPath);
           textFiles.push({
-            filename: item,
+            filename: item.name,
             full_path: itemPath,
-            relative_path: relativePath,
+            relative_path: path.relative(folderPath, itemPath),
             size: stats.size,
-            location: location
+            location: "subfolder"
           });
-        } else if (stats.isDirectory() && isRoot) {
-          // Only process immediate subdirectories
-          processDirectory(itemPath, false);
         }
       }
-    } catch (err) {
-      console.error(`Error processing directory ${dir}:`, err);
     }
+  } catch (err) {
+    console.error(`Error processing directory ${folderPath}:`, err);
   }
-  
-  // Start processing from the root
-  processDirectory(folderPath, true);
   
   return textFiles;
 }
@@ -76,52 +101,66 @@ function readTextFile(filePath) {
  */
 function findAudioFiles(folderPath) {
   const audioFiles = [];
-  const audioExtensions = ['.flac', '.mp3', '.wav', '.ogg', '.shn'];
+  const audioExtensions = new Set(['.flac', '.mp3', '.wav', '.ogg', '.shn']);
   
   // Check if the folder exists
   if (!fs.existsSync(folderPath)) {
     return audioFiles;
   }
   
-  // Function to process a directory
-  function processDirectory(dir, isRoot) {
-    try {
-      const items = fs.readdirSync(dir);
+  try {
+    // Get root directory contents
+    const rootItems = getCachedDirContents(folderPath);
+    
+    // Process root files and collect subdirectories
+    const subdirs = [];
+    
+    for (const item of rootItems) {
+      const itemPath = path.join(folderPath, item.name);
+      
+      if (item.isFile()) {
+        const ext = path.extname(item.name).toLowerCase();
+        if (audioExtensions.has(ext)) {
+          const stats = fs.statSync(itemPath);
+          audioFiles.push({
+            filename: item.name,
+            full_path: itemPath,
+            relative_path: item.name,
+            size: stats.size,
+            format: ext.substring(1),
+            location: "root"
+          });
+        }
+      } else if (item.isDirectory()) {
+        subdirs.push(itemPath);
+      }
+    }
+    
+    // Process immediate subdirectories
+    for (const subdir of subdirs) {
+      const items = getCachedDirContents(subdir);
       
       for (const item of items) {
-        const itemPath = path.join(dir, item);
-        const stats = fs.statSync(itemPath);
-        
-        if (stats.isFile()) {
-          const ext = path.extname(item).toLowerCase();
-          
-          if (audioExtensions.includes(ext)) {
-            const relativePath = path.relative(folderPath, itemPath);
-            
-            // Determine if it's in the root or a subfolder
-            const location = isRoot ? "root" : "subfolder";
-            
+        if (item.isFile()) {
+          const ext = path.extname(item.name).toLowerCase();
+          if (audioExtensions.has(ext)) {
+            const itemPath = path.join(subdir, item.name);
+            const stats = fs.statSync(itemPath);
             audioFiles.push({
-              filename: item,
+              filename: item.name,
               full_path: itemPath,
-              relative_path: relativePath,
+              relative_path: path.relative(folderPath, itemPath),
               size: stats.size,
-              format: ext.substring(1), // Remove the dot from extension
-              location: location
+              format: ext.substring(1),
+              location: "subfolder"
             });
           }
-        } else if (stats.isDirectory() && isRoot) {
-          // Only process immediate subdirectories
-          processDirectory(itemPath, false);
         }
       }
-    } catch (err) {
-      console.error(`Error processing directory ${dir}:`, err);
     }
+  } catch (err) {
+    console.error(`Error processing directory ${folderPath}:`, err);
   }
-  
-  // Start processing from the root
-  processDirectory(folderPath, true);
   
   return audioFiles;
 }
@@ -135,28 +174,14 @@ function findAudioFiles(folderPath) {
 function formatFileSize(sizeBytes) {
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
   
-  // Handle the case when size is 0
-  if (sizeBytes === 0) {
-    return '0 B';
-  }
+  if (sizeBytes === 0) return '0 B';
   
-  // Calculate the appropriate unit
-  let i = 0;
-  let size = sizeBytes;
+  const i = Math.floor(Math.log(sizeBytes) / Math.log(1024));
+  const size = sizeBytes / Math.pow(1024, i);
   
-  while (size >= 1024 && i < units.length - 1) {
-    size /= 1024.0;
-    i++;
-  }
-  
-  // Format the size with appropriate decimal places
-  if (size >= 100) {
-    return `${Math.round(size)} ${units[i]}`;
-  } else if (size >= 10) {
-    return `${size.toFixed(1)} ${units[i]}`;
-  } else {
-    return `${size.toFixed(2)} ${units[i]}`;
-  }
+  return size >= 100 ? 
+    `${Math.round(size)} ${units[i]}` : 
+    `${size.toFixed(size >= 10 ? 1 : 2)} ${units[i]}`;
 }
 
 module.exports = {

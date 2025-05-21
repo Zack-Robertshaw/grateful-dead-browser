@@ -1,7 +1,11 @@
 // utils/extractDates.js
-const fs = require('fs-extra');
+const fs = require('fs');
 const path = require('path');
-const moment = require('moment');
+const dayjs = require('dayjs');
+const customParseFormat = require('dayjs/plugin/customParseFormat');
+
+// Add the custom parse format plugin to dayjs
+dayjs.extend(customParseFormat);
 
 /**
  * Extract dates from all folder names in a file system regardless of date format or prefix
@@ -105,7 +109,7 @@ function extractDatesFromFolders(rootDirectory) {
                 const dayValue = parseInt(day);
                 const monthValue = parseInt(month);
                 
-                const dateObj = moment(`${fullYear}-${monthValue}-${dayValue}`, 'YYYY-M-D');
+                const dateObj = dayjs(`${fullYear}-${monthValue}-${dayValue}`, 'YYYY-M-D');
                 
                 if (dateObj.isValid()) {
                   const formattedDate = dateObj.format('YYYY-MM-DD');

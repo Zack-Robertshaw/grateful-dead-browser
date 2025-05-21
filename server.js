@@ -1,9 +1,9 @@
 // server.js
 const express = require('express');
 const path = require('path');
-const fs = require('fs-extra');
-const multer = require('multer');
-const fastCsv = require('fast-csv');
+const fs = require('fs');
+const { parse } = require('csv-parse');
+const dayjs = require('dayjs');
 const { extractDatesFromFolders } = require('./utils/extractDates');
 const { combineShowTables } = require('./utils/combineShows');
 const { findTextFiles, readTextFile, findAudioFiles, formatFileSize } = require('./utils/fileUtils');
@@ -24,21 +24,32 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Set up file upload middleware
-const upload = multer({ dest: 'uploads/' });
+// Simple file cache for performance
+const fileCache = new Map();
+const CACHE_TTL = 5000; // 5 seconds
 
-// Store session data
-const sessionData = {
-  analyzedData: null,
+function getCachedFileContent(filePath) {
+  const cached = fileCache.get(filePath);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.content;
+  }
+  const content = fs.readFileSync(filePath, 'utf-8');
+  fileCache.set(filePath, { content, timestamp: Date.now() });
+  return content;
+}
+
+// Store preferences in memory
+const userPrefs = {
   rootDirectory: '',
-  allDatesFile: ''
+  allDatesFile: '',
+  analyzedData: null
 };
 
 // Home page - render index with tabs
 app.get('/', (req, res) => {
   res.render('index', { 
     activeTab: 'show-browser',
-    data: sessionData
+    data: userPrefs
   });
 });
 
@@ -46,7 +57,7 @@ app.get('/', (req, res) => {
 app.get('/show-browser', (req, res) => {
   res.render('index', { 
     activeTab: 'show-browser',
-    data: sessionData
+    data: userPrefs
   });
 });
 
@@ -54,7 +65,7 @@ app.get('/show-browser', (req, res) => {
 app.get('/folder-analysis', (req, res) => {
   res.render('index', { 
     activeTab: 'folder-analysis',
-    data: sessionData
+    data: userPrefs
   });
 });
 
@@ -62,7 +73,7 @@ app.get('/folder-analysis', (req, res) => {
 app.get('/about', (req, res) => {
   res.render('index', { 
     activeTab: 'about',
-    data: sessionData
+    data: userPrefs
   });
 });
 
@@ -72,8 +83,8 @@ app.post('/api/analyze', async (req, res) => {
     const { rootDirectory, allDatesFile, outputFilename } = req.body;
     
     // Store directory paths
-    sessionData.rootDirectory = rootDirectory;
-    sessionData.allDatesFile = allDatesFile;
+    userPrefs.rootDirectory = rootDirectory;
+    userPrefs.allDatesFile = allDatesFile;
     
     // Validate paths
     if (!fs.existsSync(rootDirectory)) {
@@ -90,16 +101,16 @@ app.post('/api/analyze', async (req, res) => {
     // Combine with show dates
     const finalTable = await combineShowTables(allDatesFile, extractedDates);
     
-    // Store data in session for other endpoints to use
-    sessionData.analyzedData = finalTable;
+    // Store data for other endpoints
+    userPrefs.analyzedData = finalTable;
     
-    // Save to CSV file
-    const ws = fs.createWriteStream(outputFilename);
-    fastCsv.write(finalTable, { headers: true })
-      .pipe(ws)
-      .on('finish', () => {
-        console.log(`Analysis results saved to ${outputFilename}`);
-      });
+    // Save to CSV file using native fs
+    const csvContent = [
+      Object.keys(finalTable[0]).join(','),
+      ...finalTable.map(row => Object.values(row).join(','))
+    ].join('\n');
+    
+    fs.writeFileSync(outputFilename, csvContent);
     
     // Generate statistics
     const totalShows = finalTable.length;
@@ -140,16 +151,16 @@ app.get('/api/years', (req, res) => {
     const { useAnalysis, rootDirectory } = req.query;
     
     // Option 1: Using analysis results
-    if (useAnalysis === 'true' && sessionData.analyzedData) {
+    if (useAnalysis === 'true' && userPrefs.analyzedData) {
       // Extract years from analyzed data
-      const validShows = sessionData.analyzedData.filter(show => show.year);
+      const validShows = userPrefs.analyzedData.filter(show => show.year);
       const years = [...new Set(validShows.map(show => show.year))].sort();
       
       return res.json({ years });
     } 
     // Option 2: Direct folder browsing
     else {
-      const directory = rootDirectory || sessionData.rootDirectory;
+      const directory = rootDirectory || userPrefs.rootDirectory;
       
       if (!fs.existsSync(directory)) {
         return res.status(400).json({ error: `Root directory not found: ${directory}` });
@@ -195,8 +206,8 @@ app.get('/api/shows/:year', (req, res) => {
     const { useAnalysis, yearPath } = req.query;
     
     // Option 1: Using analysis results
-    if (useAnalysis === 'true' && sessionData.analyzedData) {
-      const yearShows = sessionData.analyzedData.filter(show => 
+    if (useAnalysis === 'true' && userPrefs.analyzedData) {
+      const yearShows = userPrefs.analyzedData.filter(show => 
         show.year && show.year.toString() === year && 
         show['full path'] // Only include shows with a valid path
       );
