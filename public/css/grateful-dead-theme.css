@@ -13,11 +13,23 @@
 body {
   color: var(--gd-text);
   font-family: system-ui, -apple-system, sans-serif;
+  background-color: #1c1c1c;  /* Dark background */
+  min-height: 100vh;  /* Ensure it covers full viewport height */
+  margin: 0;
+  padding: 20px;
+}
+
+/* Container background for better contrast */
+.container {
+  background-color: rgba(255, 255, 255, 0.05);  /* Very subtle light overlay */
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
 }
 
 /* Header styling */
 h1, h2, h3, h4, h5, h6 {
-  color: var(--gd-dark-accent);
+  color: var(--gd-background);
   font-weight: 600;
 }
 
@@ -73,29 +85,44 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 4px;
   border: 1px solid #ddd;
   padding: 8px;
+  background-color: rgba(255, 255, 255, 0.9);
+  color: var(--gd-text);
 }
 
 .form-control:focus, .form-select:focus {
   border-color: var(--gd-secondary);
   box-shadow: 0 0 0 2px rgba(107, 92, 165, 0.25);
+  background-color: white;
+}
+
+/* Form labels and text */
+.form-label, .text-center, p {
+  color: var(--gd-background);
 }
 
 /* Card styling */
 .card {
   border: none;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  background-color: rgba(255, 255, 255, 0.9);
 }
 
 .card-body {
-  background-color: white;
+  background-color: rgba(255, 255, 255, 0.9);
   padding: 16px;
+  color: var(--gd-text);
 }
 
 .card-title {
-  color: var(--gd-secondary);
+  color: var(--gd-dark-accent);
   font-weight: 600;
   margin-bottom: 16px;
+}
+
+/* Form check labels */
+.form-check-label {
+  color: var(--gd-background);
 }
 
 /* Ticket button styling */
@@ -120,7 +147,8 @@ h1, h2, h3, h4, h5, h6 {
   border: 1px solid var(--gd-secondary);
   border-radius: 8px;
   padding: 8px;
-  background-color: white;
+  background-color: rgba(255, 255, 255, 0.9);
+  color: var(--gd-text);
 }
 
 /* Badges */
@@ -134,6 +162,8 @@ h1, h2, h3, h4, h5, h6 {
 .table {
   border-radius: 8px;
   overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.9);
+  color: var(--gd-text);
 }
 
 .table thead th {
@@ -144,12 +174,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .table-striped tbody tr:nth-of-type(odd) {
-  background-color: rgba(107, 92, 165, 0.05);
+  background-color: rgba(255, 255, 255, 0.95);
 }
 
 .table tbody td {
   padding: 8px 12px;
-  border-color: rgba(107, 92, 165, 0.1);
+  border-color: rgba(107, 92, 165, 0.2);
+  color: var(--gd-text);
 }
 
 /* Hampton Ticket button */
@@ -179,16 +210,50 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .alert-success {
-  background-color: rgba(26, 147, 111, 0.1);
-  color: var(--gd-primary);
+  background-color: rgba(26, 147, 111, 0.2);
+  color: #ffffff;
   border-left: 4px solid var(--gd-primary);
 }
 
 /* Tab panes */
 .tab-pane {
   padding: 16px;
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: rgba(255, 255, 255, 0.1);
   border-radius: 8px;
+  color: var(--gd-background);
+}
+
+/* Background images for specific tabs */
+#folder-analysis, #show-browser {
+  position: relative;
+  min-height: 600px;
+}
+
+#folder-analysis::before, #show-browser::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);  /* Dark overlay with 60% opacity */
+  border-radius: 8px;
+}
+
+#folder-analysis {
+  background: url('../images/gd-tapes.jpg') no-repeat center center;
+  background-size: cover;
+}
+
+#show-browser {
+  background: url('../images/gd-tape2.jpg') no-repeat center center;
+  background-size: cover;
+}
+
+/* Ensure content stays above the overlay */
+#folder-analysis > *, #show-browser > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* Loading indicator */
@@ -204,4 +269,78 @@ h1, h2, h3, h4, h5, h6 {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* Tab content container */
+.tab-content {
+  background-color: transparent;
+  border-radius: 0.5rem;
+  padding: 2rem;
+  margin-top: 1rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  height: 85vh; /* Fixed height instead of min-height */
+  overflow: hidden; /* Hide overflow */
+}
+
+/* Individual tab panes */
+.tab-pane {
+  height: 100%;
+  overflow-y: auto; /* Enable scrolling */
+  position: relative;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+/* Background image handling */
+#show-browser, #folder-analysis {
+  position: relative;
+  background-attachment: fixed; /* Keep background fixed while scrolling */
+  background-size: cover;
+  background-position: center;
+}
+
+/* Content wrapper inside tab panes */
+.tab-pane > .row {
+  background-color: rgba(0, 0, 0, 0.6);
+  border-radius: 0.5rem;
+  margin: 0;
+  padding: 1rem;
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* Scrollbar styling */
+.tab-pane::-webkit-scrollbar {
+  width: 12px;
+}
+
+.tab-pane::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.tab-pane::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+}
+
+/* Ensure all content is visible over backgrounds */
+.tab-pane .card,
+.tab-pane .form-control,
+.tab-pane .form-select,
+.tab-pane .alert {
+  background-color: rgba(129, 141, 199, 0.9);
+}
+
+/* Override text color for specific elements that need dark text */
+.form-control, 
+.form-select, 
+.text-file-content, 
+.track-list,
+.table tbody td,
+.card-body,
+.alert {
+  color: var(--gd-text);
 }
