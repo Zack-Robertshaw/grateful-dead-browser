@@ -344,3 +344,29 @@ h1, h2, h3, h4, h5, h6 {
 .alert {
   color: var(--gd-text);
 }
+
+/* Analysis results styling */
+#analysis-results .card {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+#analysis-results .card-body {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+#analysis-results .card-title {
+  color: var(--gd-dark-accent);
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+#analysis-results .card-text {
+  color: var(--gd-text);
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+#analysis-results h3,
+#analysis-results h4 {
+  color: var(--gd-background);
+}
