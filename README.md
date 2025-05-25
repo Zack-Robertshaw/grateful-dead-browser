@@ -9,8 +9,13 @@ A Node.js application for browsing, organizing, and playing Grateful Dead show r
 - 📝 Browse and view text files with show details
 - 🎵 Browse audio files by year and show
 - ▶️ One-click concert playback with VLC
+  - Smart process management (auto-closes previous show)
+  - Proper playlist ordering
+  - Auto-exits when playlist completes
 - 📊 Show statistics and coverage information
 - 🔍 Filter by year and show date
+- ⚡ Optimized for local playback and browsing
+- 🗄️ File caching for improved performance
 
 ## Prerequisites
 
@@ -52,7 +57,9 @@ A Node.js application for browsing, organizing, and playing Grateful Dead show r
    - Specify the path to all_dates.csv reference file
    - Run the analysis to extract and match show information
    - Browse shows by year and explore text files with show details
-   - Play concerts with VLC
+   - Click the ticket icon to play concerts with VLC
+     - Click a different show's ticket to automatically switch playback
+     - VLC will close automatically when the show finishes
 
 ## Development
 
@@ -83,6 +90,14 @@ RootDirectory/
 ## Reference File
 
 The application uses a file called `all_dates.csv` that contains information about known Grateful Dead shows. This file should have at least a `ShowDate` column in `YYYY-MM-DD` format.
+
+## Performance
+
+The application is optimized for local use with:
+- File system caching
+- Efficient directory scanning
+- Smart VLC process management
+- Minimal dependencies
 
 ## License
 

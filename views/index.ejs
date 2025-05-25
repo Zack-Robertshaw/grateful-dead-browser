@@ -40,18 +40,57 @@
     /* Style the tabs at the top */
     .nav-tabs {
       border-bottom: none;
-      margin-top: 1rem;
-      justify-content: center;
+      margin-top: 0.5rem;
     }
     
     .nav-tabs .nav-link {
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       font-weight: 500;
-      padding: 0.75rem 1.5rem;
+      padding: 0.5rem 1.25rem;
       border-radius: 0.5rem 0.5rem 0 0;
-      margin-right: 0.5rem;
+      margin-left: 0.5rem;
+      background-color: rgba(255, 255, 255, 0.9);
+      color: var(--gd-text);
+      border: 1px solid #dee2e6;
+      transition: all 0.2s ease-in-out;
     }
     
+    .nav-tabs .nav-link:hover {
+      background-color: rgba(26, 147, 111, 0.1);
+      border-color: #1a936f;
+    }
+    
+    .nav-tabs .nav-link.active {
+      background-color: #1a936f;
+      color: white;
+      border-color: #1a936f;
+      font-weight: 600;
+    }
+
+    /* Header layout */
+    .brand-logo {
+      height: 50px;
+      margin-right: 1rem;
+      vertical-align: middle;
+    }
+
+    .nav-tabs-container {
+      max-width: 60%;
+    }
+
+    @media (max-width: 768px) {
+      .d-flex.align-items-center.justify-content-between {
+        flex-direction: column;
+      }
+      .nav-tabs-container {
+        max-width: 100%;
+        margin-top: 1rem;
+      }
+      .nav-tabs {
+        justify-content: center !important;
+      }
+    }
+
     /* Ticket-style button styling with larger font */
     .ticket-button {
       font-size: 36px !important;
@@ -116,13 +155,6 @@
       border-radius: 5px;
     }
 
-    /* Small brand logo in navbar */
-    .brand-logo {
-      height: 40px;
-      margin-right: 1rem;
-      vertical-align: middle;
-    }
-
     /* Audio table styling */
     .table {
       background-color: rgba(255, 255, 255, 0.9);
@@ -132,39 +164,44 @@
 </head>
 <body>
   <div class="container-fluid">
-    <!-- Navigation tabs at the top -->
-    <div class="d-flex align-items-center justify-content-center mt-3 mb-1">
-      <img src="/images/steal-your-face.jpg" alt="Grateful Dead Logo" class="brand-logo">
-      <h2 class="mb-0">Grateful Dead Show Browser</h2>
+    <!-- Navigation header with logo, title, and tabs -->
+    <div class="d-flex align-items-center justify-content-between mt-3 mb-1">
+      <!-- Logo and title on the left -->
+      <div class="d-flex align-items-center">
+        <img src="/images/steal-your-face.jpg" alt="Grateful Dead Logo" class="brand-logo">
+        <h2 class="mb-0 me-4">Grateful Dead Show Browser</h2>
+      </div>
+      
+      <!-- Navigation tabs on the right -->
+      <div class="nav-tabs-container flex-grow-1">
+        <ul class="nav nav-tabs justify-content-end" id="myTab" role="tablist"> 
+          <li class="nav-item" role="presentation">
+            <button class="nav-link <%= activeTab === 'show-browser' ? 'active' : '' %>" 
+                    id="show-browser-tab" data-bs-toggle="tab" 
+                    data-bs-target="#show-browser" type="button" role="tab" 
+                    aria-controls="show-browser" aria-selected="<%= activeTab === 'show-browser' %>">
+              Show Browser
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link <%= activeTab === 'folder-analysis' ? 'active' : '' %>" 
+                    id="folder-analysis-tab" data-bs-toggle="tab" 
+                    data-bs-target="#folder-analysis" type="button" role="tab" 
+                    aria-controls="folder-analysis" aria-selected="<%= activeTab === 'folder-analysis' %>">
+              Folder Analysis
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link <%= activeTab === 'about' ? 'active' : '' %>" 
+                    id="about-tab" data-bs-toggle="tab" 
+                    data-bs-target="#about" type="button" role="tab" 
+                    aria-controls="about" aria-selected="<%= activeTab === 'about' %>">
+              About
+            </button>
+          </li>
+        </ul>
+      </div>
     </div>
-    
-    <div class="nav-tabs-container">
-      <ul class="nav nav-tabs" id="myTab" role="tablist"> 
-      <li class="nav-item" role="presentation">
-        <button class="nav-link <%= activeTab === 'show-browser' ? 'active' : '' %>" 
-                id="show-browser-tab" data-bs-toggle="tab" 
-                data-bs-target="#show-browser" type="button" role="tab" 
-                aria-controls="show-browser" aria-selected="<%= activeTab === 'show-browser' %>">
-          Show Browser
-        </button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link <%= activeTab === 'folder-analysis' ? 'active' : '' %>" 
-                id="folder-analysis-tab" data-bs-toggle="tab" 
-                data-bs-target="#folder-analysis" type="button" role="tab" 
-                aria-controls="folder-analysis" aria-selected="<%= activeTab === 'folder-analysis' %>">
-          Folder Analysis
-        </button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link <%= activeTab === 'about' ? 'active' : '' %>" 
-                id="about-tab" data-bs-toggle="tab" 
-                data-bs-target="#about" type="button" role="tab" 
-                aria-controls="about" aria-selected="<%= activeTab === 'about' %>">
-          About
-        </button>
-      </li>
-    </ul>
     
     <!-- Tab content -->
     <div class="tab-content" id="myTabContent">
