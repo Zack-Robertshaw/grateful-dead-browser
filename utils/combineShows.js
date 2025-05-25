@@ -1,7 +1,6 @@
 // utils/combineShows.js
-const fs = require('fs-extra');
-const csv = require('fast-csv');
-const { collect } = require('collect.js');
+const fs = require('fs');
+const { parse } = require('csv-parse');
 
 /**
  * Combine the all_dates.csv file with the extracted folder data
@@ -16,7 +15,7 @@ async function combineShowTables(allDatesFile, extractedFolderData) {
     const allDates = [];
     
     fs.createReadStream(allDatesFile)
-      .pipe(csv.parse({ headers: true }))
+      .pipe(parse({ columns: true }))
       .on('error', error => reject(error))
       .on('data', row => allDates.push(row))
       .on('end', () => resolve(allDates));
@@ -80,13 +79,17 @@ async function combineShowTables(allDatesFile, extractedFolderData) {
     }
   });
   
-  // Count shows per year using collect.js (similar to Counter in Python)
+  // Count shows per year using native JavaScript methods
   const validRows = combinedData.filter(row => row['year']);
-  const yearCounts = collect(validRows).groupBy('year').map(group => group.count());
+  const yearCounts = validRows.reduce((acc, row) => {
+    const year = row['year'];
+    acc[year] = (acc[year] || 0) + 1;
+    return acc;
+  }, {});
   
   combinedData.forEach(row => {
     if (row['year']) {
-      row['<< total shows per year'] = yearCounts.get(row['year']);
+      row['<< total shows per year'] = yearCounts[row['year']];
     }
   });
   
