@@ -7,11 +7,14 @@ const dayjs = require('dayjs');
 const { extractDatesFromFolders } = require('./utils/extractDates');
 const { combineShowTables } = require('./utils/combineShows');
 const { findTextFiles, readTextFile, findAudioFiles, formatFileSize } = require('./utils/fileUtils');
-const { spawn } = require('child_process');
+const { spawn, exec } = require('child_process');
 
 // Initialize Express app
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Track current VLC process
+let currentVlcProcess = null;
 
 // Set up EJS as the view engine
 app.set('view engine', 'ejs');
@@ -398,26 +401,108 @@ app.post('/api/play-concert', (req, res) => {
     if (!vlcCmd) {
       vlcCmd = 'vlc';
     }
-    
-    // Start VLC process
-    const vlcProcess = spawn(vlcCmd, filePaths, {
-      detached: true,
-      stdio: 'ignore'
-    });
-    
-    // Detach the process so it can run independently
-    vlcProcess.unref();
-    
-    return res.json({ 
-      success: true, 
-      message: `Playing ${filePaths.length} tracks with VLC` 
-    });
+
+    // Function to kill existing VLC process
+    const killExistingVLC = () => {
+      return new Promise((resolve) => {
+        if (!currentVlcProcess) {
+          resolve();
+          return;
+        }
+
+        const killCommand = platform === 'darwin' ? 
+          'killall VLC' : 
+          platform === 'win32' ? 
+            'taskkill /F /IM vlc.exe' : 
+            'pkill -f vlc';
+
+        exec(killCommand, (error) => {
+          if (error) {
+            console.log('Warning: Could not kill existing VLC process:', error);
+          }
+          // Even if there's an error, we proceed after a delay
+          setTimeout(() => {
+            currentVlcProcess = null;
+            resolve();
+          }, 1000);
+        });
+      });
+    };
+
+    // Function to start new VLC process
+    const startNewVLC = () => {
+      return new Promise((resolve, reject) => {
+        try {
+          // Start new VLC process with --play-and-exit flag
+          currentVlcProcess = spawn(vlcCmd, ['--play-and-exit', ...filePaths], {
+            detached: true,
+            stdio: 'ignore'
+          });
+
+          // Handle process exit
+          currentVlcProcess.on('exit', (code) => {
+            console.log('VLC process exited with code:', code);
+            currentVlcProcess = null;
+          });
+
+          // Wait a short time to ensure process started
+          setTimeout(() => {
+            if (currentVlcProcess) {
+              resolve();
+            } else {
+              reject(new Error('Failed to start VLC'));
+            }
+          }, 500);
+        } catch (error) {
+          reject(error);
+        }
+      });
+    };
+
+    // Execute the kill and start sequence
+    killExistingVLC()
+      .then(() => startNewVLC())
+      .then(() => {
+        res.json({ 
+          success: true, 
+          message: `Playing ${filePaths.length} tracks with VLC` 
+        });
+      })
+      .catch((error) => {
+        console.error('Error managing VLC process:', error);
+        res.status(500).json({ 
+          success: false, 
+          error: `Failed to start playback: ${error.message}` 
+        });
+      });
+
   } catch (error) {
     console.error('Error playing concert:', error);
     res.status(500).json({ 
       success: false, 
       error: `Error playing concert: ${error.message}` 
     });
+  }
+});
+
+// Update the cleanup handler for server shutdown as well
+process.on('SIGINT', () => {
+  if (currentVlcProcess) {
+    const platform = process.platform;
+    const killCommand = platform === 'darwin' ? 
+      'killall VLC' : 
+      platform === 'win32' ? 
+        'taskkill /F /IM vlc.exe' : 
+        'pkill -f vlc';
+    
+    exec(killCommand, (error) => {
+      if (error) {
+        console.log('Warning: Could not kill VLC process on shutdown:', error);
+      }
+      process.exit(0);
+    });
+  } else {
+    process.exit(0);
   }
 });
 
