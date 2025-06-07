@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Grateful Dead Show Browser</title>
+  <link rel="icon" type="image/jpeg" href="/images/steal-your-face.jpg">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="/css/grateful-dead-theme.css" rel="stylesheet">
 
@@ -169,7 +170,7 @@
       <!-- Logo and title on the left -->
       <div class="d-flex align-items-center">
         <img src="/images/steal-your-face.jpg" alt="Grateful Dead Logo" class="brand-logo">
-        <h2 class="mb-0 me-4">Grateful Dead Show Browser</h2>
+        <h2 class="mb-0 me-4">Greatest Story Ever Told</h2>
       </div>
       
       <!-- Navigation tabs on the right -->
@@ -210,7 +211,7 @@
            id="show-browser" role="tabpanel" aria-labelledby="show-browser-tab">
         <div class="row">
           <div class="col-md-3">
-            <h3>The Bus Came By</h3>
+            <h3>The bus came by</h3>
             
             <!-- Analysis results checkbox -->
             <div class="mb-3 form-check" id="analysis-check-container" style="display: none;">
@@ -247,7 +248,7 @@
               <div class="row">
                 <!-- Text Files Column -->
                 <div class="col-md-6">
-                  <h3>And I Got On</h3>
+                  <h3>and I got on,</h3>
                   <div class="mb-3">
                     <select class="form-select" id="text-file-select">
                       <option value="">No text files found</option>
@@ -260,7 +261,7 @@
                 
                 <!-- Audio Files Column -->
                 <div class="col-md-6">
-                  <h3>That's When It All Began</h3>
+                  <h3>that's when it all began</h3>
                   
                   <!-- Play button -->
                   <div class="mb-3">
@@ -321,12 +322,7 @@
                        value="<%= data.rootDirectory || '/Volumes/PiMedia/music/grateful_dead' %>">
               </div>
               
-              <div class="mb-3">
-                <label for="all-dates-file" class="form-label">Path to all_dates.csv:</label>
-                <input type="text" class="form-control" id="all-dates-file" 
-                       value="<%= data.allDatesFile || '/Users/zackrobertshaw/Desktop/all_dates.csv' %>">
-              </div>
-              
+
               <div class="mb-3">
                 <label for="output-filename" class="form-label">Output Filename:</label>
                 <input type="text" class="form-control" id="output-filename" value="final_table.csv">
@@ -348,7 +344,7 @@
                 <div class="col-md-6">
                   <div class="card mb-3">
                     <div class="card-body">
-                      <h5 class="card-title">Total shows in all_dates.csv</h5>
+                      <h5 class="card-title">Total shows in database</h5>
                       <p class="card-text" id="stat-total-shows">-</p>
                     </div>
                   </div>
@@ -413,52 +409,83 @@
            id="about" role="tabpanel" aria-labelledby="about-tab">
         <div class="row">
           <div class="col-md-10 offset-md-1">
-            <h2 class="text-center mb-4">About This Application</h2>
+            <h2 class="text-center mb-4">Greatest Story Ever Told</h2>
             
             <div class="row mb-4">
               <div class="col-md-4 text-center">
                 <img src="/images/steal-your-face.jpg" alt="Steal Your Face" class="img-fluid" style="max-height: 200px;">
               </div>
               <div class="col-md-8">
-                <h3>Grateful Dead Show Folder Analyzer</h3>
+                <h3>Grateful Dead Show Collection Browser & Analyzer</h3>
                 <p>
-                  This application helps organize and explore Grateful Dead show recordings by:
+                  This application helps organize and explore your Grateful Dead show recordings by:
                 </p>
                 <ol>
+                  <li>Offering an intuitive browser interface to explore show details and setlists</li>
+                  <li>Enabling one-click concert playback with VLC in the correct track order</li>
                   <li>Analyzing folder names to extract dates in various formats</li>
-                  <li>Matching folder dates with a reference database of known shows</li>
-                  <li>Providing a browser interface to explore show details, setlists, and recording information</li>
-                  <li>Playing complete concerts with VLC in the correct track order</li>
+                  <li>Matching folder dates with a built-in database of 2,087 verified shows</li>
                 </ol>
               </div>
             </div>
             
+            <h3 class="mt-4">File Structure</h3>
+            <p>
+              <strong>No renaming required!</strong> The application works with folder names exactly as downloaded. 
+              Here's an example of what your collection might look like:
+            </p>
+            <pre class="p-3 rounded" style="background-color: black; color: white;">
+RootDirectory/
+├── 1985/
+│   ├── gd85-02-19.akgC422.walker.scotton.miller.106685.sbeok.flac16/
+│   ├── gd85-03-09.sbd.miller.104962.flac16/
+│   ├── gd85-03-22.141206.remastered....known.Bryant.Miller.Noel.t-flac16/
+│   └── ...
+├── 1977/
+│   ├── gd1977-05-08.sbd.hicks.4982.sbeok.shnf/
+│   ├── Dead Set - 1977-10-29 - Evans Field House/
+│   └── ...
+└── ...</pre>
+            <p>
+              The application intelligently extracts dates from any folder naming pattern - whether it's archive.org downloads, 
+              etree folders, or custom names. Organizing by year helps with browsing performance, but isn't required.
+            </p>
+
             <h3 class="mt-4">How to Use</h3>
             <ol>
               <li>In the "Folder Analysis" tab, specify the root directory containing your Grateful Dead recordings</li>
-              <li>Provide the path to the all_dates.csv reference file</li>
-              <li>Run the analysis to extract and match show information</li>
+              <li>Run the analysis to extract and match show information - results automatically save to your Downloads folder</li>
               <li>Use the "Show Browser" tab to explore shows by year and view text files with show details</li>
-              <li>Click "Click the Ticket" to listen to the entire show in the correct order with VLC</li>
+              <li>Click the ticket to listen to entire shows in VLC with proper track ordering</li>
             </ol>
             
             <h3 class="mt-4">Features</h3>
             <ul>
-              <li>Date extraction from multiple folder name formats</li>
-              <li>Matching with known show database</li>
-              <li>Text file viewer for setlists and show notes</li>
-              <li>Audio file browser with format and size information</li>
-              <li>One-click concert playback with VLC Media Player</li>
-              <li>Alphabetical track ordering for proper concert sequence</li>
-              <li>Statistics and filtering options</li>
-              <li>Independent show browsing without requiring analysis</li>
+              <li><strong>Smart Date Extraction:</strong> Recognizes multiple folder name formats and date patterns</li>
+              <li><strong>Built-in Show Database:</strong> 2,087 verified Grateful Dead shows with no external dependencies</li>
+              <li><strong>Automatic Downloads:</strong> Analysis results save directly to your Downloads folder</li>
+              <li><strong>Text File Viewer:</strong> Browse setlists, show notes, and recording information</li>
+              <li><strong>Audio File Browser:</strong> View files by format with size information</li>
+              <li><strong>VLC Integration:</strong> One-click concert playback with proper track sequencing</li>
+              <li><strong>Comprehensive Statistics:</strong> Coverage analysis and folder matching reports</li>
+              <li><strong>Flexible Browsing:</strong> Explore shows independently or use analysis results</li>
             </ul>
             
             <h3 class="mt-4">About the Data</h3>
             <p>
-              The application uses a reference file called all_dates.csv that contains verified information about 
-              Grateful Dead shows. This is combined with the folder structure of your audio collection to provide 
-              a comprehensive view of your recordings.
+              The application includes a complete database of 2,087 verified Grateful Dead shows spanning from 1965 to 1995. 
+              This built-in database eliminates the need for external files and ensures consistent, reliable show information.
+            </p>
+            <p>
+              The show database was created from the comprehensive <strong>"Every Time Played" Excel spreadsheet</strong>, 
+              which catalogs every known Grateful Dead performance. This authoritative reference is available for download at 
+              <a href="https://www.gratefuldeadbook.com/product-page/every-time-played-excel-spreadsheet" target="_blank" class="text-decoration-none">
+                gratefuldeadbook.com
+              </a> and serves as the foundation for accurate show identification and matching.
+            </p>
+            <p>
+              The show data is combined with your folder structure analysis to provide comprehensive insights into your collection, 
+              including coverage statistics and missing shows.
             </p>
             
             <h3 class="mt-4">VLC Player Integration</h3>

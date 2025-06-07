@@ -19,7 +19,6 @@ const showBrowserElements = {
   const folderAnalysisElements = {
     analysisForm: document.getElementById('analysis-form'),
     rootDirectory: document.getElementById('root-directory'),
-    allDatesFile: document.getElementById('all-dates-file'),
     outputFilename: document.getElementById('output-filename'),
     analysisResults: document.getElementById('analysis-results'),
     analysisSuccessMessage: document.getElementById('analysis-success-message'),
@@ -43,11 +42,10 @@ const showBrowserElements = {
     try {
       // Get form values
       const rootDirectory = folderAnalysisElements.rootDirectory.value;
-      const allDatesFile = folderAnalysisElements.allDatesFile.value;
       const outputFilename = folderAnalysisElements.outputFilename.value;
       
       // Validate inputs
-      if (!rootDirectory || !allDatesFile || !outputFilename) {
+      if (!rootDirectory || !outputFilename) {
         alert('Please fill in all fields');
         return;
       }
@@ -64,7 +62,6 @@ const showBrowserElements = {
         },
         body: JSON.stringify({
           rootDirectory,
-          allDatesFile,
           outputFilename
         })
       });
