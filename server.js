@@ -2,6 +2,7 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const { parse } = require('csv-parse');
 const dayjs = require('dayjs');
 const { extractDatesFromFolders } = require('./utils/extractDates');
@@ -44,7 +45,6 @@ function getCachedFileContent(filePath) {
 // Store preferences in memory
 const userPrefs = {
   rootDirectory: '',
-  allDatesFile: '',
   analyzedData: null
 };
 
@@ -83,26 +83,21 @@ app.get('/about', (req, res) => {
 // API endpoint to run folder analysis
 app.post('/api/analyze', async (req, res) => {
   try {
-    const { rootDirectory, allDatesFile, outputFilename } = req.body;
+    const { rootDirectory, outputFilename } = req.body;
     
     // Store directory paths
     userPrefs.rootDirectory = rootDirectory;
-    userPrefs.allDatesFile = allDatesFile;
     
     // Validate paths
     if (!fs.existsSync(rootDirectory)) {
       return res.status(400).json({ error: `Could not find the root directory: ${rootDirectory}` });
     }
     
-    if (!fs.existsSync(allDatesFile)) {
-      return res.status(400).json({ error: `Could not find the all_dates.csv file: ${allDatesFile}` });
-    }
-    
     // Extract folder information
     const extractedDates = extractDatesFromFolders(rootDirectory);
     
-    // Combine with show dates
-    const finalTable = await combineShowTables(allDatesFile, extractedDates);
+    // Combine with show dates using hard-coded data
+    const finalTable = await combineShowTables(extractedDates);
     
     // Store data for other endpoints
     userPrefs.analyzedData = finalTable;
@@ -113,7 +108,10 @@ app.post('/api/analyze', async (req, res) => {
       ...finalTable.map(row => Object.values(row).join(','))
     ].join('\n');
     
-    fs.writeFileSync(outputFilename, csvContent);
+    // Save to Downloads folder
+    const os = require('os');
+    const downloadsPath = path.join(os.homedir(), 'Downloads', outputFilename);
+    fs.writeFileSync(downloadsPath, csvContent);
     
     // Generate statistics
     const totalShows = finalTable.length;
@@ -138,13 +136,31 @@ app.post('/api/analyze', async (req, res) => {
     
     res.json({
       success: true,
-      message: 'Analysis complete',
+      message: `Analysis complete - saved to Downloads/${outputFilename}`,
       statistics,
-      outputFilename
+      outputFilename,
+      filePath: downloadsPath
     });
   } catch (error) {
     console.error('Error during analysis:', error);
     res.status(500).json({ error: `Analysis failed: ${error.message}` });
+  }
+});
+
+// Download endpoint for CSV files
+app.get('/download/:filename', (req, res) => {
+  try {
+    const { filename } = req.params;
+    const downloadsPath = path.join(os.homedir(), 'Downloads', filename);
+    
+    if (!fs.existsSync(downloadsPath)) {
+      return res.status(404).json({ error: 'File not found in Downloads folder' });
+    }
+    
+    res.download(downloadsPath, filename);
+  } catch (error) {
+    console.error('Error downloading file:', error);
+    res.status(500).json({ error: `Download failed: ${error.message}` });
   }
 });
 

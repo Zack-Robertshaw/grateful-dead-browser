@@ -321,10 +321,8 @@
                        value="<%= data.rootDirectory || '/Volumes/PiMedia/music/grateful_dead' %>">
               </div>
               
-              <div class="mb-3">
-                <label for="all-dates-file" class="form-label">Path to all_dates.csv:</label>
-                <input type="text" class="form-control" id="all-dates-file" 
-                       value="<%= data.allDatesFile || '/Users/zackrobertshaw/Desktop/all_dates.csv' %>">
+              <div class="alert alert-info">
+                <strong>Note:</strong> Show date data is now built-in (including taper's compendium rankings). No external CSV file needed!
               </div>
               
               <div class="mb-3">
@@ -348,7 +346,7 @@
                 <div class="col-md-6">
                   <div class="card mb-3">
                     <div class="card-body">
-                      <h5 class="card-title">Total shows in all_dates.csv</h5>
+                      <h5 class="card-title">Total shows in database</h5>
                       <p class="card-text" id="stat-total-shows">-</p>
                     </div>
                   </div>
@@ -436,8 +434,7 @@
             <h3 class="mt-4">How to Use</h3>
             <ol>
               <li>In the "Folder Analysis" tab, specify the root directory containing your Grateful Dead recordings</li>
-              <li>Provide the path to the all_dates.csv reference file</li>
-              <li>Run the analysis to extract and match show information</li>
+              <li>Run the analysis to extract and match show information (show database is built-in)</li>
               <li>Use the "Show Browser" tab to explore shows by year and view text files with show details</li>
               <li>Click "Click the Ticket" to listen to the entire show in the correct order with VLC</li>
             </ol>
@@ -456,8 +453,8 @@
             
             <h3 class="mt-4">About the Data</h3>
             <p>
-              The application uses a reference file called all_dates.csv that contains verified information about 
-              Grateful Dead shows. This is combined with the folder structure of your audio collection to provide 
+              The application uses a built-in database of 2,087 verified Grateful Dead shows with taper's compendium rankings. 
+              This data is combined with the folder structure of your audio collection to provide 
               a comprehensive view of your recordings.
             </p>
             

@@ -1,28 +1,15 @@
 // utils/combineShows.js
-const fs = require('fs');
-const { parse } = require('csv-parse');
+const { allDatesData } = require('../data/allDatesData');
 
 /**
- * Combine the all_dates.csv file with the extracted folder data
+ * Combine the hard-coded all_dates data with the extracted folder data
  * 
- * @param {string} allDatesFile - Path to the all_dates.csv file
  * @param {Array} extractedFolderData - List of objects containing folder information
  * @returns {Promise<Array>} - Promise resolving to the combined data array
  */
-async function combineShowTables(allDatesFile, extractedFolderData) {
-  // Read the all_dates CSV file
-  const allDatesPromise = new Promise((resolve, reject) => {
-    const allDates = [];
-    
-    fs.createReadStream(allDatesFile)
-      .pipe(parse({ columns: true }))
-      .on('error', error => reject(error))
-      .on('data', row => allDates.push(row))
-      .on('end', () => resolve(allDates));
-  });
-  
-  // Wait for the CSV to be fully loaded
-  const allDatesData = await allDatesPromise;
+async function combineShowTables(extractedFolderData) {
+  // Use the hard-coded data instead of reading from CSV
+  const allDatesDataCopy = [...allDatesData];
   
   // Convert the extracted folder data into a similar format
   const foldersData = extractedFolderData.map(folder => {
@@ -38,7 +25,7 @@ async function combineShowTables(allDatesFile, extractedFolderData) {
   });
   
   // Create a new combined data array starting with the all_dates data
-  const combinedData = [...allDatesData];
+  const combinedData = [...allDatesDataCopy];
   
   // Initialize new columns with null values
   combinedData.forEach(row => {

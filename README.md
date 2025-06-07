@@ -58,11 +58,6 @@ RootDirectory/
    npm install
    ```
 
-3. Create necessary directories:
-   ```bash
-   mkdir -p uploads
-   ```
-
 ## Usage
 
 1. Start the application:
