@@ -1,17 +1,17 @@
-# Grateful Dead Show Browser
+# Greatest Story Ever Told
 
-A Node.js application for browsing, organizing, and playing Grateful Dead show recordings.
+A Node.js application for browsing and playing your Grateful Dead show recordings with an intuitive web interface.
 
 ## Features
 
-- 📁 Analyzes folder names to extract show dates
-- 🗓️ Matches recordings with known show database
-- 📝 Browse and view text files with show details
-- 🎵 Browse audio files by year and show
-- ▶️ One-click concert playback with VLC
+- 🎵 **Intuitive browser interface** to explore show details and setlists
+- ▶️ **One-click concert playback** with VLC in the correct track order
   - Smart process management (auto-closes previous show)
   - Proper playlist ordering
   - Auto-exits when playlist completes
+- 📁 **Smart folder analysis** to extract show dates from any naming format
+- 🗓️ **Built-in show database** - 2,087 verified shows with no external dependencies
+- 📝 Browse and view text files with show details
 - 📊 Show statistics and coverage information
 - 🔍 Filter by year and show date
 - ⚡ Optimized for local playback and browsing
@@ -24,34 +24,34 @@ A Node.js application for browsing, organizing, and playing Grateful Dead show r
 - The following Node.js packages (installed via `npm install`):
   - [Express](https://expressjs.com/) for the web server
   - [EJS](https://ejs.co/) for templating
-  - [csv-parse](https://csv.js.org/parse/) for handling CSV data
   - [Day.js](https://day.js.org/) for date manipulation
 
 ## File Structure
 
-The file structure of your Grateful Dead recordings should follow this pattern:
+**No renaming required!** The application works with folder names exactly as downloaded. Here's what your collection might look like:
 
 ```
 RootDirectory/
-├── 1969/
-│   ├── 1969-01-25 Avalon Ballroom/
-│   │   ├── gd69-01-25d1t01.flac
-│   │   ├── gd69-01-25d1t02.flac
-│   │   └── ...
-│   └── 1969-02-11 Fillmore West/
-│       └── ...
-├── 1970/
+├── 1985/
+│   ├── gd85-02-19.akgC422.walker.scotton.miller.106685.sbeok.flac16/
+│   ├── gd85-03-09.sbd.miller.104962.flac16/
+│   ├── gd85-03-22.141206.remastered....known.Bryant.Miller.Noel.t-flac16/
+│   └── ...
+├── 1977/
+│   ├── gd1977-05-08.sbd.hicks.4982.sbeok.shnf/
+│   ├── Dead Set - 1977-10-29 - Evans Field House/
 │   └── ...
 └── ...
 ```
 
+The application intelligently extracts dates from any folder naming pattern - whether it's archive.org downloads, etree folders, or custom names. Organizing by year helps with browsing performance, but isn't required.
 
 ## Installation
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/yourusername/grateful-dead-show-browser.git
-   cd grateful-dead-show-browser
+   git clone https://github.com/yourusername/grateful-dead-browser.git
+   cd grateful-dead-browser
    ```
 2. Install dependencies:
    ```bash
@@ -70,14 +70,17 @@ RootDirectory/
    http://localhost:3000
    ```
 
-3. Use the application:
-   - Set your root directory containing Grateful Dead recordings
-   - Specify the path to all_dates.csv reference file
-   - Run the analysis to extract and match show information
-   - Browse shows by year and explore text files with show details
-   - Click the ticket icon to play concerts with VLC
-     - Click a different show's ticket to automatically switch playback
-     - VLC will close automatically when the show finishes
+3. How to use:
+   - Use the "Show Browser" tab to explore shows by year and view text files with show details
+   - Click the ticket to listen to entire shows in VLC with proper track ordering
+   - Optionally use the "Folder Analysis" tab to analyze your collection and get coverage statistics
+   - Analysis results automatically save to your Downloads folder
+
+## About the Data
+
+The application includes a complete database of 2,087 verified Grateful Dead shows spanning from 1965 to 1995. The show database was created from the comprehensive **"Every Time Played" Excel spreadsheet**, which catalogs every known Grateful Dead performance. This authoritative reference is available for download at [gratefuldeadbook.com](https://www.gratefuldeadbook.com/product-page/every-time-played-excel-spreadsheet).
+
+This built-in database eliminates the need for external files and ensures consistent, reliable show information.
 
 ## Development
 
@@ -87,11 +90,6 @@ For development with automatic server restart on file changes:
 npm run dev
 ```
 
-
-## Reference File
-
-The application uses a file called `all_dates.csv` that contains information about known Grateful Dead shows. The `all_dates.csv` is created from the "Every Time Played" Excel spreadsheet, which can be downloaded [here](https://www.gratefuldeadbook.com/product-page/every-time-played-excel-spreadsheet). The all_dates.csv file should have at least a `ShowDate` column in `YYYY-MM-DD` format.
-
 ## Performance
 
 The application is optimized for local use with:
@@ -99,6 +97,7 @@ The application is optimized for local use with:
 - Efficient directory scanning
 - Smart VLC process management
 - Minimal dependencies
+- Built-in show database (no external file dependencies)
 
 ## License
 
