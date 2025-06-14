@@ -370,15 +370,21 @@ app.get('/api/read-text-file', (req, res) => {
 // API endpoint to play concert with system player
 app.post('/api/play-concert', (req, res) => {
   try {
-    const { filePaths } = req.body;
-    
+    const { filePaths, startIndex = 0 } = req.body;
+
     if (!filePaths || !Array.isArray(filePaths) || filePaths.length === 0) {
       return res.status(400).json({ error: 'No files to play' });
     }
-    
-    // Sort files alphabetically to ensure correct concert order
-    filePaths.sort();
-    
+
+    // Ensure startIndex is a valid number and handle potential edge cases
+    const start = Math.max(0, Math.min(parseInt(startIndex, 10) || 0, filePaths.length - 1));
+
+    // Reorder the playlist to start at the correct index
+    const orderedFilePaths = [
+      ...filePaths.slice(start),
+      ...filePaths.slice(0, start)
+    ];
+
     // Try to find VLC on different platforms
     let vlcCmd;
     const platform = process.platform;
@@ -450,10 +456,12 @@ app.post('/api/play-concert', (req, res) => {
       return new Promise((resolve, reject) => {
         try {
           // Start new VLC process with --play-and-exit flag
-          currentVlcProcess = spawn(vlcCmd, ['--play-and-exit', ...filePaths], {
+          const vlcProcess = spawn(vlcCmd, ['--play-and-exit', '--no-auto-preparse', ...orderedFilePaths], {
             detached: true,
             stdio: 'ignore'
           });
+          currentVlcProcess = vlcProcess; // Assign to global
+          console.log('VLC process started for playlist');
 
           // Handle process exit
           currentVlcProcess.on('exit', (code) => {
@@ -461,15 +469,23 @@ app.post('/api/play-concert', (req, res) => {
             currentVlcProcess = null;
           });
 
+          // Handle errors
+          currentVlcProcess.on('error', (err) => {
+            console.error('Failed to start VLC:', err);
+            reject(err);
+          });
+
           // Wait a short time to ensure process started
           setTimeout(() => {
             if (currentVlcProcess) {
               resolve();
             } else {
-              reject(new Error('Failed to start VLC'));
+              reject(new Error('VLC process did not start in time.'));
             }
-          }, 500);
+          }, 1000); // 1-second delay
+
         } catch (error) {
+          console.error('Error starting VLC process:', error);
           reject(error);
         }
       });
@@ -477,11 +493,11 @@ app.post('/api/play-concert', (req, res) => {
 
     // Execute the kill and start sequence
     killExistingVLC()
-      .then(() => startNewVLC())
+      .then(startNewVLC)
       .then(() => {
-        res.json({ 
-          success: true, 
-          message: `Playing ${filePaths.length} tracks with VLC` 
+        res.json({
+          success: true,
+          message: `Playing ${orderedFilePaths.length} tracks with VLC`
         });
       })
       .catch((error) => {
@@ -499,6 +515,22 @@ app.post('/api/play-concert', (req, res) => {
       error: `Error playing concert: ${error.message}` 
     });
   }
+});
+
+// API endpoint to stop all playback
+app.post('/api/stop', (req, res) => {
+  const platform = process.platform;
+  const killCommand = platform === 'darwin' ? 'killall VLC' : platform === 'win32' ? 'taskkill /F /IM vlc.exe' : 'pkill -f vlc';
+
+  exec(killCommand, (error) => {
+    if (error) {
+      console.log('Warning: Could not kill VLC process (it might not be running):', error);
+      // Still send a success response, as the goal is to have no VLC running
+      return res.json({ success: true, message: 'Playback stopped (VLC may not have been running).' });
+    }
+    currentVlcProcess = null;
+    res.json({ success: true, message: 'Playback stopped successfully' });
+  });
 });
 
 // Update the cleanup handler for server shutdown as well
