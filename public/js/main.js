@@ -12,8 +12,6 @@ const showBrowserElements = {
   textFileSelect: document.getElementById('text-file-select'),
   textFileContent: document.getElementById('text-file-content'),
   trackList: document.getElementById('track-list'),
-  audioFormatCounts: document.getElementById('audio-format-counts'),
-  audioFilesTable: document.getElementById('audio-files-table'),
   playConcert: document.getElementById('play-concert')
 };
 
@@ -244,46 +242,15 @@ async function loadShowContent(showPath) {
       showBrowserElements.textFileSelect.innerHTML = '<option value="">No text files found</option>';
     }
     
-    // Update audio format counts
-    if (data.audioByFormat) {
-      let formatCountsHtml = '';
-      Object.entries(data.audioByFormat).forEach(([format, files]) => {
-        formatCountsHtml += `<span class="badge bg-secondary me-2">${format}: ${files.length} files</span>`;
-      });
-      showBrowserElements.audioFormatCounts.innerHTML = formatCountsHtml;
-    } else {
-      showBrowserElements.audioFormatCounts.innerHTML = '<p>No audio files found</p>';
-    }
-    
-    // Update audio files table
-    const audioTableBody = showBrowserElements.audioFilesTable.querySelector('tbody');
-    audioTableBody.innerHTML = '';
-    
-    if (data.audioFiles && data.audioFiles.length > 0) {
-      data.audioFiles.forEach((file, index) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${file.filename}</td>
-          <td>${file.format}</td>
-          <td>${file.size}</td>
-          <td>${file.location}</td>
-          <td><button class="btn btn-sm btn-primary play-track" data-index="${index}"><i class="fas fa-play"></i></button></td>
-        `;
-        audioTableBody.appendChild(row);
-      });
-    } else {
-      audioTableBody.innerHTML = '<tr><td colspan="5" class="text-center">No audio files found</td></tr>';
-    }
-    
     // Update track list
-    if (data.trackOrder && data.trackOrder.length > 0) {
+    if (data.audioFiles && data.audioFiles.length > 0) {
       let trackListText = '';
-      data.trackOrder.forEach(track => {
-        trackListText += `${track.number}. ${track.name}\n`;
+      data.audioFiles.forEach((file, index) => {
+        trackListText += `${index + 1}. ${file.filename}\n`;
       });
       showBrowserElements.trackList.textContent = trackListText;
     } else {
-      showBrowserElements.trackList.textContent = 'No tracks found';
+      showBrowserElements.trackList.textContent = 'No audio files found';
     }
     
     // Store playlist for the play button
@@ -323,64 +290,65 @@ async function loadTextFileContent(filePath) {
 
 // Play concert with VLC
 async function playConcert(startIndex = 0) {
-try {
-  if (currentPlaylist.length === 0) {
-    alert('No audio files to play');
-    return;
-  }
-  
-  // Get the button and store original content
-  const playButton = showBrowserElements.playConcert;
-  const originalContent = playButton.innerHTML;
-  
-  // Add overlay and disable button
-  playButton.disabled = true;
-  const buttonContainer = document.createElement('div');
-  buttonContainer.style.position = 'relative';
-  buttonContainer.innerHTML = originalContent + 
-    '<div class="overlay">Starting player...</div>';
-  playButton.innerHTML = '';
-  playButton.appendChild(buttonContainer);
-  
-  // Make the API call to play the concert
-  const response = await fetch('/api/play-concert', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      filePaths: currentPlaylist,
-      startIndex
-    })
-  });
-  
-  const data = await response.json();
-  
-  if (data.success) {
-    // Update overlay with success message
-    const overlay = playButton.querySelector('.overlay');
-    if (overlay) {
-      overlay.textContent = 'Now Playing...';
+  try {
+    if (currentPlaylist.length === 0) {
+      alert('No audio files to play');
+      return;
     }
     
-    // Remove overlay and re-enable button after delay
-    setTimeout(() => {
+    // Get the button and store original content
+    const playButton = showBrowserElements.playConcert;
+    const originalContent = playButton.innerHTML;
+    
+    // Add overlay and disable button
+    playButton.disabled = true;
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.position = 'relative';
+    buttonContainer.innerHTML = originalContent + 
+      '<div class="overlay">Starting player...</div>';
+    playButton.innerHTML = '';
+    playButton.appendChild(buttonContainer);
+    
+    // Make the API call to play the concert
+    const response = await fetch('/api/play-concert', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        filePaths: currentPlaylist,
+        startIndex
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      // Update overlay with success message
+      const overlay = playButton.querySelector('.overlay');
+      if (overlay) {
+        overlay.textContent = 'Now Playing...';
+      }
+      
+      // Remove overlay and re-enable button after delay
+      setTimeout(() => {
+        playButton.innerHTML = originalContent;
+        playButton.disabled = false;
+      }, 3000);
+    } else {
+      alert(data.error || 'Error playing concert');
       playButton.innerHTML = originalContent;
       playButton.disabled = false;
-    }, 3000);
-  } else {
-    alert(data.error || 'Error playing concert');
-    playButton.innerHTML = originalContent;
+    }
+  } catch (error) {
+    console.error('Error playing concert:', error);
+    alert(`Error playing concert: ${error.message}`);
+    const playButton = showBrowserElements.playConcert;
+    playButton.innerHTML = originalContent; // Restore original content
     playButton.disabled = false;
   }
-} catch (error) {
-  console.error('Error playing concert:', error);
-  alert(`Error playing concert: ${error.message}`);
-  const playButton = showBrowserElements.playConcert;
-  playButton.innerHTML = originalContent; // Restore original content
-  playButton.disabled = false;
 }
-}  
+
 // Event Listeners
 document.addEventListener('DOMContentLoaded', async () => {
   // Check if analysis data is available
@@ -436,17 +404,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   if (showBrowserElements.playConcert) {
     showBrowserElements.playConcert.addEventListener('click', () => playConcert(0));
-  }
-
-  // Add event listener for individual track play buttons
-  if (showBrowserElements.audioFilesTable) {
-    showBrowserElements.audioFilesTable.addEventListener('click', (event) => {
-      const playButton = event.target.closest('.play-track');
-      if (playButton) {
-        const index = playButton.getAttribute('data-index');
-        playConcert(parseInt(index, 10));
-      }
-    });
   }
   
   // Initialize folder analysis
