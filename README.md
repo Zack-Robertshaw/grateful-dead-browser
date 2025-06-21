@@ -44,7 +44,7 @@ RootDirectory/
 └── ...
 ```
 
-The application intelligently extracts dates from any folder naming pattern - whether it's archive.org downloads, etree folders, or custom names. Organizing by year helps with browsing performance, but isn't required.
+The application intelligently extracts dates from any folder naming pattern - whether it's archive.org downloads, etree folders, or custom names. Organizing by year is required.
 
 ## Installation
 
