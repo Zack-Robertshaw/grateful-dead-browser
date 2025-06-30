@@ -229,6 +229,16 @@ async function loadShowContent(showPath) {
       return;
     }
     
+    // Update the play button image
+    const playButtonImg = showBrowserElements.playConcert.querySelector('img');
+    if (data.imagePath) {
+      playButtonImg.src = `/api/image?path=${encodeURIComponent(data.imagePath)}`;
+      playButtonImg.alt = 'Custom show image - Click to Play Show';
+    } else {
+      playButtonImg.src = '/images/hamptonTicket.jpg';
+      playButtonImg.alt = 'Hampton Ticket - Click to Play Show';
+    }
+    
     // Update text files dropdown
     if (data.textFiles && data.textFiles.length > 0) {
       showBrowserElements.textFileSelect.innerHTML = '<option value="">Select a text file</option>';

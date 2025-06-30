@@ -166,6 +166,56 @@ function findAudioFiles(folderPath) {
 }
 
 /**
+ * Find the first image file in a folder path and its immediate subfolders
+ * 
+ * @param {string} folderPath - Path to the folder to search
+ * @returns {string|null} - The full path of the first image found, or null
+ */
+function findImageFile(folderPath) {
+  const imageExtensions = new Set(['.jpg', '.jpeg', '.png', '.gif']);
+
+  if (!fs.existsSync(folderPath)) {
+    return null;
+  }
+
+  try {
+    const rootItems = getCachedDirContents(folderPath);
+    const subdirs = [];
+
+    for (const item of rootItems) {
+      if (item.name.startsWith('.')) continue; // Ignore hidden files
+      const itemPath = path.join(folderPath, item.name);
+      if (item.isFile()) {
+        const ext = path.extname(item.name).toLowerCase();
+        if (imageExtensions.has(ext)) {
+          return itemPath; // Return the first one found
+        }
+      } else if (item.isDirectory()) {
+        subdirs.push(itemPath);
+      }
+    }
+
+    for (const subdir of subdirs) {
+      const items = getCachedDirContents(subdir);
+      for (const item of items) {
+        if (item.name.startsWith('.')) continue; // Ignore hidden files
+        if (item.isFile()) {
+          const ext = path.extname(item.name).toLowerCase();
+          if (imageExtensions.has(ext)) {
+            const itemPath = path.join(subdir, item.name);
+            return itemPath; // Return the first one found
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error(`Error processing directory ${folderPath}:`, err);
+  }
+
+  return null; // No image found
+}
+
+/**
  * Format file size in bytes to a human-readable string
  * 
  * @param {number} sizeBytes - File size in bytes
@@ -188,5 +238,6 @@ module.exports = {
   findTextFiles,
   readTextFile,
   findAudioFiles,
-  formatFileSize
+  formatFileSize,
+  findImageFile
 };
