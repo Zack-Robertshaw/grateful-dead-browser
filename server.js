@@ -7,7 +7,7 @@ const { parse } = require('csv-parse');
 const dayjs = require('dayjs');
 const { extractDatesFromFolders } = require('./utils/extractDates');
 const { combineShowTables } = require('./utils/combineShows');
-const { findTextFiles, readTextFile, findAudioFiles, formatFileSize } = require('./utils/fileUtils');
+const { findTextFiles, readTextFile, findAudioFiles, findImageFile, formatFileSize } = require('./utils/fileUtils');
 const { spawn, exec } = require('child_process');
 
 // Initialize Express app
@@ -298,6 +298,9 @@ app.get('/api/show-content', (req, res) => {
     // Find audio files in the selected folder
     const audioFiles = findAudioFiles(showPath);
     
+    // Find an image file in the selected folder
+    const imagePath = findImageFile(showPath);
+    
     // Format text files for display
     const formattedTextFiles = textFiles.map(file => ({
       filename: file.filename,
@@ -337,7 +340,8 @@ app.get('/api/show-content', (req, res) => {
       trackOrder: sortedFiles.map((file, index) => ({
         number: index + 1,
         name: file.filename
-      }))
+      })),
+      imagePath
     });
   } catch (error) {
     console.error('Error fetching show content:', error);
@@ -364,6 +368,28 @@ app.get('/api/read-text-file', (req, res) => {
   } catch (error) {
     console.error('Error reading text file:', error);
     res.status(500).json({ error: `Failed to read text file: ${error.message}` });
+  }
+});
+
+// API endpoint to serve an image file
+app.get('/api/image', (req, res) => {
+  try {
+    const { path: imagePath } = req.query;
+
+    if (!imagePath) {
+      return res.status(400).send('Image path not provided');
+    }
+
+    // Security check: Ensure the path is likely safe,
+    // though more robust validation might be needed in a real-world app
+    if (!fs.existsSync(imagePath)) {
+      return res.status(404).send('Image not found');
+    }
+
+    res.sendFile(imagePath);
+  } catch (error) {
+    console.error('Error serving image:', error);
+    res.status(500).send('Error serving image');
   }
 });
 
