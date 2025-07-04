@@ -1,14 +1,15 @@
 # Greatest Story Ever Told
 
-A Node.js application for browsing and playing your Grateful Dead show recordings with an intuitive web interface.
+A Node.js application for browsing and playing your Grateful Dead show recordings with an intuitive web interface, featuring seamless **foobar2000** integration for high-quality audio playback.
 
 ## Features
 
 - 🎵 **Intuitive browser interface** to explore show details and setlists
-- ▶️ **One-click concert playback** with VLC in the correct track order
+- ▶️ **One-click concert playback** with foobar2000 in perfect track order
   - Smart process management (auto-closes previous show)
-  - Proper playlist ordering
-  - Auto-exits when playlist completes
+  - Temporary playlist generation for reliable playback
+  - Automatic metadata file filtering (removes `._` files)
+  - Preserves exact concert sequence
 - 📁 **Smart folder analysis** to extract show dates from any naming format
 - 🗓️ **Built-in show database** - 2,087 verified shows with no external dependencies
 - 📝 Browse and view text files with show details
@@ -20,7 +21,10 @@ A Node.js application for browsing and playing your Grateful Dead show recording
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) (v14 or newer)
-- [VLC Media Player](https://www.videolan.org/vlc/) (for concert playback)
+- [foobar2000](https://www.foobar2000.org/mac) (for concert playback)
+  - **macOS**: Download from [foobar2000.org/mac](https://www.foobar2000.org/mac)
+  - **Windows**: Download from [foobar2000.org](https://www.foobar2000.org/)
+  - **Linux**: Not officially supported (requires Wine compatibility layer)
 - The following Node.js packages (installed via `npm install`):
   - [Express](https://expressjs.com/) for the web server
   - [EJS](https://ejs.co/) for templating
@@ -48,12 +52,15 @@ The application intelligently extracts dates from any folder naming pattern - wh
 
 ## Installation
 
-1. Clone this repository:
+1. **Install foobar2000** on your system first (see Prerequisites above)
+
+2. Clone this repository:
    ```bash
    git clone https://github.com/yourusername/grateful-dead-browser.git
    cd grateful-dead-browser
    ```
-2. Install dependencies:
+
+3. Install dependencies:
    ```bash
    npm install
    ```
@@ -72,9 +79,31 @@ The application intelligently extracts dates from any folder naming pattern - wh
 
 3. How to use:
    - Use the "Show Browser" tab to explore shows by year and view text files with show details
-   - Click the ticket to listen to entire shows in VLC with proper track ordering
+   - Click the ticket to listen to entire shows in foobar2000 with proper track ordering
+   - The app automatically creates temporary playlists for seamless concert playback
    - Optionally use the "Folder Analysis" tab to analyze your collection and get coverage statistics
    - Analysis results automatically save to your Downloads folder
+
+## foobar2000 Integration
+
+This application uses **foobar2000** for superior audio playback with the following advantages:
+
+### 🎵 **Playback Features**
+- **Perfect track ordering**: Maintains the exact concert sequence
+- **Gapless playback**: Seamless transitions between tracks
+- **High-quality audio**: Supports FLAC and other lossless formats
+- **Auto-cleanup**: Closes previous instances when starting new shows
+
+### ⚙️ **Technical Implementation**
+- **Temporary M3U playlists**: Creates playlist files for reliable multi-track playback
+- **Metadata filtering**: Automatically excludes macOS `._` files and hidden files
+- **Process management**: Smart handling of foobar2000 instances
+- **Cross-platform paths**: Supports macOS, Windows, and Linux (via Wine)
+
+### 🚀 **User Experience**
+- **One-click playback**: Just click the ticket image to start any show
+- **Automatic switching**: Selecting a new show closes the current one and starts the new one
+- **No manual playlist creation**: The app handles all playlist management automatically
 
 ## About the Data
 
@@ -90,14 +119,31 @@ For development with automatic server restart on file changes:
 npm run dev
 ```
 
-## Performance
+## Performance & Optimization
 
 The application is optimized for local use with:
-- File system caching
-- Efficient directory scanning
-- Smart VLC process management
-- Minimal dependencies
-- Built-in show database (no external file dependencies)
+- **File system caching** for faster directory scanning
+- **Efficient audio file discovery** with format filtering
+- **Smart foobar2000 process management** to prevent resource conflicts
+- **Temporary file cleanup** to maintain system cleanliness
+- **Minimal dependencies** for faster startup
+- **Built-in show database** (no external file dependencies)
+
+## Supported Audio Formats
+
+Optimized for **FLAC** files, but foobar2000 supports many formats including:
+- FLAC (primary focus)
+- MP3, MP4, AAC
+- WAV, AIFF
+- WavPack, Monkey's Audio (APE)
+- Ogg Vorbis, Opus
+- And many more with foobar2000 components
+
+## Platform Compatibility
+
+- ✅ **macOS**: Full native support
+- ✅ **Windows**: Full native support  
+- ⚠️ **Linux**: Requires Wine compatibility layer for foobar2000
 
 ## License
 

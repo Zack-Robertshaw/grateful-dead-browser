@@ -305,7 +305,7 @@ async function loadTextFileContent(filePath) {
   }
 }
 
-// Play concert with VLC
+// Play concert with foobar2000
 async function playConcert(startIndex = 0) {
   try {
     if (currentPlaylist.length === 0) {
