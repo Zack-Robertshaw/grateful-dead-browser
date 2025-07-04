@@ -210,72 +210,72 @@
       <div class="tab-pane fade <%= activeTab === 'show-browser' ? 'show active' : '' %>" 
            id="show-browser" role="tabpanel" aria-labelledby="show-browser-tab">
         <div class="row">
-          <div class="col-md-3">
-            <h3>Pick a show</h3>
-            
-            <!-- Analysis results checkbox -->
-            <div class="mb-3 form-check" id="analysis-check-container" style="display: none;">
-              <input type="checkbox" class="form-check-input" id="use-analysis">
-              <label class="form-check-label" for="use-analysis">Use analysis results</label>
+          <!-- Left Column: Pick a show + Check the setlist -->
+          <div class="col-md-6">
+            <!-- Pick a show section -->
+            <div class="mb-4">
+              <h3>Pick a show</h3>
+              
+              <!-- Analysis results checkbox -->
+              <div class="mb-3 form-check" id="analysis-check-container" style="display: none;">
+                <input type="checkbox" class="form-check-input" id="use-analysis">
+                <label class="form-check-label" for="use-analysis">Use analysis results</label>
+              </div>
+              
+              <!-- Root directory input (shown when not using analysis) -->
+              <div class="mb-3" id="root-dir-container">
+                <label for="browser-root-dir" class="form-label">Root Directory Path:</label>
+                <input type="text" class="form-control" id="browser-root-dir" 
+                       value="<%= data.rootDirectory || '/Volumes/PiMedia/music/grateful_dead' %>">
+              </div>
+              
+              <!-- Year selection -->
+              <div class="mb-3">
+                <label for="year-select" class="form-label">Select Year:</label>
+                <select class="form-select" id="year-select" disabled>
+                  <option value="">Loading years...</option>
+                </select>
+              </div>
+              
+              <!-- Show selection -->
+              <div class="mb-3">
+                <label for="show-select" class="form-label">Select Show:</label>
+                <select class="form-select" id="show-select" disabled>
+                  <option value="">Select a year first</option>
+                </select>
+              </div>
             </div>
             
-            <!-- Root directory input (shown when not using analysis) -->
-            <div class="mb-3" id="root-dir-container">
-              <label for="browser-root-dir" class="form-label">Root Directory Path:</label>
-              <input type="text" class="form-control" id="browser-root-dir" 
-                     value="<%= data.rootDirectory || '/Volumes/PiMedia/music/grateful_dead' %>">
-            </div>
-            
-            <!-- Year selection -->
-            <div class="mb-3">
-              <label for="year-select" class="form-label">Select Year:</label>
-              <select class="form-select" id="year-select" disabled>
-                <option value="">Loading years...</option>
-              </select>
-            </div>
-            
-            <!-- Show selection -->
-            <div class="mb-3">
-              <label for="show-select" class="form-label">Select Show:</label>
-              <select class="form-select" id="show-select" disabled>
-                <option value="">Select a year first</option>
-              </select>
+            <!-- Check the setlist section -->
+            <div id="setlist-section" style="display: none;">
+              <h3>Check the setlist</h3>
+              <div class="mb-3">
+                <select class="form-select" id="text-file-select">
+                  <option value="">No text files found</option>
+                </select>
+              </div>
+              <div class="text-file-content" id="text-file-content">
+                Select a text file to view its content
+              </div>
             </div>
           </div>
           
-          <div class="col-md-9">
+          <!-- Right Column: Play the show -->
+          <div class="col-md-6">
             <div id="show-content" style="display: none;">
-              <div class="row">
-                <!-- Text Files Column -->
-                <div class="col-md-6">
-                  <h3>Check the setlist</h3>
-                  <div class="mb-3">
-                    <select class="form-select" id="text-file-select">
-                      <option value="">No text files found</option>
-                    </select>
-                  </div>
-                  <div class="text-file-content" id="text-file-content">
-                    Select a text file to view its content
-                  </div>
-                </div>
-                
-                <!-- Audio Files Column -->
-                <div class="col-md-6">
-                  <h3>Play the show</h3>
-                  
-                  <!-- Play button -->
-                  <div class="mb-3">
-                    <button id="play-concert" class="hampton-ticket-button">
-                      <img src="/images/hamptonTicket.jpg" alt="Hampton Ticket - Click to Play Show" class="img-fluid" />
-                    </button>
-                  </div>                      
-                  
-                  <!-- Track list -->
-                  <h4>Track Order</h4>
-                  <div class="track-list" id="track-list">
-                    No tracks found
-                  </div>
-                </div>
+              <h3>Play the show</h3>
+              
+              <!-- Play button -->
+              <div class="mb-3">
+                <button id="play-concert" class="hampton-ticket-button">
+                  <img src="/images/hamptonTicket.jpg" alt="Hampton Ticket - Click to Play Show" class="img-fluid" />
+                </button>
+              </div>                      
+              
+              <!-- Track list -->
+              <h4>Track Order</h4>
+              <div class="track-list" id="track-list">
+                No tracks found
               </div>
             </div>
             
@@ -428,7 +428,7 @@ RootDirectory/
 └── ...</pre>
             <p>
               The application intelligently extracts dates from any folder naming pattern - whether it's archive.org downloads, 
-              etree folders, or custom names. Organizing by year helps with browsing performance, but isn't required.
+              etree folders, or custom names. Organizing by year is required.
             </p>
 
             <h3 class="mt-4">How to Use</h3>
@@ -467,7 +467,9 @@ RootDirectory/
               The show data is combined with your folder structure analysis to provide comprehensive insights into your collection, 
               including coverage statistics and missing shows.
             </p>
-            
+            <p>
+              All show and folder images courtesy of Lossless Legs user Easter_Everywhere.  They're awesome!
+            </p>
             <h3 class="mt-4">VLC Player Integration</h3>
             <p>
               This application uses VLC Media Player to play complete concerts. The "Play Concert" button will:

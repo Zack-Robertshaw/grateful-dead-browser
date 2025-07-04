@@ -218,6 +218,13 @@ async function loadShowContent(showPath) {
     // Show loading state
     showBrowserElements.showContent.style.display = 'block';
     showBrowserElements.noShowSelected.style.display = 'none';
+    
+    // Show the setlist section in the left column
+    const setlistSection = document.getElementById('setlist-section');
+    if (setlistSection) {
+      setlistSection.style.display = 'block';
+    }
+    
     showBrowserElements.textFileContent.textContent = 'Loading show content...';
     showBrowserElements.trackList.textContent = 'Loading tracks...';
     
@@ -397,6 +404,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       } else {
         showBrowserElements.showContent.style.display = 'none';
         showBrowserElements.noShowSelected.style.display = 'block';
+        
+        // Hide the setlist section when no show is selected
+        const setlistSection = document.getElementById('setlist-section');
+        if (setlistSection) {
+          setlistSection.style.display = 'none';
+        }
       }
     });
   }
