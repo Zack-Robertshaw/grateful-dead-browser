@@ -76,7 +76,7 @@
     }
 
     .nav-tabs-container {
-      max-width: 60%;
+      /* Removed max-width constraint to use full available space */
     }
 
     @media (max-width: 768px) {
@@ -166,11 +166,11 @@
 <body>
   <div class="container-fluid">
     <!-- Navigation header with logo, title, and tabs -->
-    <div class="d-flex align-items-center justify-content-between mt-3 mb-1">
+    <div class="d-flex align-items-center justify-content-between mt-2 mb-1">
       <!-- Logo and title on the left -->
       <div class="d-flex align-items-center">
         <img src="/images/steal-your-face.jpg" alt="Grateful Dead Logo" class="brand-logo">
-        <h2 class="mb-0 me-4">Greatest Story Ever Told</h2>
+        <h2 class="mb-0 me-3">Greatest Story Ever Told</h2>
       </div>
       
       <!-- Navigation tabs on the right -->
@@ -305,7 +305,7 @@
 
               <div class="mb-3">
                 <label for="output-filename" class="form-label">Output Filename:</label>
-                <input type="text" class="form-control" id="output-filename" value="final_table.csv">
+                <input type="text" class="form-control" id="output-filename" value="analysis_results.csv">
               </div>
               
               <button type="submit" class="btn btn-primary">Run Analysis</button>
