@@ -5,7 +5,7 @@ A Node.js application for browsing and playing your Grateful Dead show recording
 ## Features
 
 - 🎵 **Intuitive browser interface** to explore show details and setlists
-- ▶️ **One-click concert playback** with VLC in the correct track order
+- ▶️ **One-click concert playback** with foobar2000 in the correct track order
   - Smart process management (auto-closes previous show)
   - Proper playlist ordering
   - Auto-exits when playlist completes
@@ -20,7 +20,7 @@ A Node.js application for browsing and playing your Grateful Dead show recording
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) (v14 or newer)
-- [VLC Media Player](https://www.videolan.org/vlc/) (for concert playback)
+- [foobar2000](https://www.foobar2000.org/mac) (for concert playback)
 - The following Node.js packages (installed via `npm install`):
   - [Express](https://expressjs.com/) for the web server
   - [EJS](https://ejs.co/) for templating
@@ -72,7 +72,7 @@ The application intelligently extracts dates from any folder naming pattern - wh
 
 3. How to use:
    - Use the "Show Browser" tab to explore shows by year and view text files with show details
-   - Click the ticket to listen to entire shows in VLC with proper track ordering
+   - Click the ticket to listen to entire shows in foobar2000 with proper track ordering
    - Optionally use the "Folder Analysis" tab to analyze your collection and get coverage statistics
    - Analysis results automatically save to your Downloads folder
 
@@ -95,7 +95,7 @@ npm run dev
 The application is optimized for local use with:
 - File system caching
 - Efficient directory scanning
-- Smart VLC process management
+- Smart foobar2000 process management
 - Minimal dependencies
 - Built-in show database (no external file dependencies)
 

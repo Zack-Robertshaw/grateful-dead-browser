@@ -14,8 +14,8 @@ const { spawn, exec } = require('child_process');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Track current VLC process
-let currentVlcProcess = null;
+// Track current foobar2000 process
+let currentFoobar2000Process = null;
 
 // Set up EJS as the view engine
 app.set('view engine', 'ejs');
@@ -405,129 +405,168 @@ app.post('/api/play-concert', (req, res) => {
     // Ensure startIndex is a valid number and handle potential edge cases
     const start = Math.max(0, Math.min(parseInt(startIndex, 10) || 0, filePaths.length - 1));
 
+    // Filter out macOS metadata files and other problematic files
+    const cleanFilePaths = filePaths.filter(filePath => {
+      const fileName = path.basename(filePath);
+      // Exclude macOS metadata files (._filename) and hidden files
+      return !fileName.startsWith('._') && !fileName.startsWith('.');
+    });
+
+    if (cleanFilePaths.length === 0) {
+      return res.status(400).json({ error: 'No valid audio files found after filtering' });
+    }
+
+    // Update the start index to account for filtered files
+    const adjustedStart = Math.max(0, Math.min(parseInt(startIndex, 10) || 0, cleanFilePaths.length - 1));
+
     // Reorder the playlist to start at the correct index
     const orderedFilePaths = [
-      ...filePaths.slice(start),
-      ...filePaths.slice(0, start)
+      ...cleanFilePaths.slice(adjustedStart),
+      ...cleanFilePaths.slice(0, adjustedStart)
     ];
 
-    // Try to find VLC on different platforms
-    let vlcCmd;
+    // Try to find foobar2000 on different platforms
+    let foobarCmd;
     const platform = process.platform;
     
     if (platform === 'darwin') {
       // macOS
-      if (fs.existsSync('/Applications/VLC.app/Contents/MacOS/VLC')) {
-        vlcCmd = '/Applications/VLC.app/Contents/MacOS/VLC';
+      if (fs.existsSync('/Applications/foobar2000.app/Contents/MacOS/foobar2000')) {
+        foobarCmd = '/Applications/foobar2000.app/Contents/MacOS/foobar2000';
       }
     } else if (platform === 'win32') {
       // Windows
       const windowsPaths = [
-        'C:\\Program Files\\VideoLAN\\VLC\\vlc.exe',
-        'C:\\Program Files (x86)\\VideoLAN\\VLC\\vlc.exe'
+        'C:\\Program Files\\foobar2000\\foobar2000.exe',
+        'C:\\Program Files (x86)\\foobar2000\\foobar2000.exe'
       ];
       
       for (const p of windowsPaths) {
         if (fs.existsSync(p)) {
-          vlcCmd = p;
+          foobarCmd = p;
           break;
         }
       }
     } else if (platform === 'linux') {
-      // Linux
-      const linuxPaths = ['/usr/bin/vlc', '/usr/local/bin/vlc'];
+      // Linux - foobar2000 is not officially supported on Linux
+      // Users would need to use Wine or similar compatibility layer
+      const linuxPaths = ['/usr/bin/foobar2000', '/usr/local/bin/foobar2000'];
       
       for (const p of linuxPaths) {
         if (fs.existsSync(p)) {
-          vlcCmd = p;
+          foobarCmd = p;
           break;
         }
       }
     }
     
-    // Fall back to 'vlc' command if no specific path was found
-    if (!vlcCmd) {
-      vlcCmd = 'vlc';
+    // Fall back to 'foobar2000' command if no specific path was found
+    if (!foobarCmd) {
+      foobarCmd = 'foobar2000';
     }
 
-    // Function to kill existing VLC process
-    const killExistingVLC = () => {
+    // Function to kill existing foobar2000 process
+    const killExistingFoobar2000 = () => {
       return new Promise((resolve) => {
-        if (!currentVlcProcess) {
+        if (!currentFoobar2000Process) {
           resolve();
           return;
         }
 
         const killCommand = platform === 'darwin' ? 
-          'killall VLC' : 
+          'killall foobar2000' : 
           platform === 'win32' ? 
-            'taskkill /F /IM vlc.exe' : 
-            'pkill -f vlc';
+            'taskkill /F /IM foobar2000.exe' : 
+            'pkill -f foobar2000';
 
         exec(killCommand, (error) => {
           if (error) {
-            console.log('Warning: Could not kill existing VLC process:', error);
+            console.log('Warning: Could not kill existing foobar2000 process:', error);
           }
           // Even if there's an error, we proceed after a delay
           setTimeout(() => {
-            currentVlcProcess = null;
+            currentFoobar2000Process = null;
             resolve();
           }, 1000);
         });
       });
     };
 
-    // Function to start new VLC process
-    const startNewVLC = () => {
+    // Function to start new foobar2000 process
+    const startNewFoobar2000 = () => {
       return new Promise((resolve, reject) => {
         try {
-          // Start new VLC process with --play-and-exit flag
-          const vlcProcess = spawn(vlcCmd, ['--play-and-exit', '--no-auto-preparse', ...orderedFilePaths], {
+          // Create a temporary M3U playlist file for reliable playback
+          const os = require('os');
+          const tempPlaylistPath = path.join(os.tmpdir(), `grateful_dead_playlist_${Date.now()}.m3u`);
+          
+          // Create M3U playlist content
+          const playlistContent = orderedFilePaths.join('\n');
+          fs.writeFileSync(tempPlaylistPath, playlistContent);
+          
+          console.log(`Starting foobar2000 with playlist file containing ${orderedFilePaths.length} files`);
+          console.log('Playlist file:', tempPlaylistPath);
+          console.log('First few files:', orderedFilePaths.slice(0, 3));
+          
+          // Start foobar2000 with the playlist file
+          const foobarProcess = spawn(foobarCmd, [tempPlaylistPath], {
             detached: true,
             stdio: 'ignore'
           });
-          currentVlcProcess = vlcProcess; // Assign to global
-          console.log('VLC process started for playlist');
+          currentFoobar2000Process = foobarProcess; // Assign to global
+          console.log('foobar2000 process started with playlist file');
+          
+          // Clean up playlist file after a delay
+          setTimeout(() => {
+            try {
+              if (fs.existsSync(tempPlaylistPath)) {
+                fs.unlinkSync(tempPlaylistPath);
+                console.log('Temporary playlist file cleaned up');
+              }
+            } catch (err) {
+              console.log('Warning: Could not clean up temporary playlist file:', err);
+            }
+          }, 5000); // Clean up after 5 seconds
 
           // Handle process exit
-          currentVlcProcess.on('exit', (code) => {
-            console.log('VLC process exited with code:', code);
-            currentVlcProcess = null;
+          currentFoobar2000Process.on('exit', (code) => {
+            console.log('foobar2000 process exited with code:', code);
+            currentFoobar2000Process = null;
           });
 
           // Handle errors
-          currentVlcProcess.on('error', (err) => {
-            console.error('Failed to start VLC:', err);
+          currentFoobar2000Process.on('error', (err) => {
+            console.error('Failed to start foobar2000:', err);
             reject(err);
           });
 
           // Wait a short time to ensure process started
           setTimeout(() => {
-            if (currentVlcProcess) {
+            if (currentFoobar2000Process) {
               resolve();
             } else {
-              reject(new Error('VLC process did not start in time.'));
+              reject(new Error('foobar2000 process did not start in time.'));
             }
           }, 1000); // 1-second delay
 
         } catch (error) {
-          console.error('Error starting VLC process:', error);
+          console.error('Error starting foobar2000 process:', error);
           reject(error);
         }
       });
     };
 
     // Execute the kill and start sequence
-    killExistingVLC()
-      .then(startNewVLC)
+    killExistingFoobar2000()
+      .then(startNewFoobar2000)
       .then(() => {
         res.json({
           success: true,
-          message: `Playing ${orderedFilePaths.length} tracks with VLC`
+          message: `Playing ${orderedFilePaths.length} tracks with foobar2000`
         });
       })
       .catch((error) => {
-        console.error('Error managing VLC process:', error);
+        console.error('Error managing foobar2000 process:', error);
         res.status(500).json({ 
           success: false, 
           error: `Failed to start playback: ${error.message}` 
@@ -546,32 +585,32 @@ app.post('/api/play-concert', (req, res) => {
 // API endpoint to stop all playback
 app.post('/api/stop', (req, res) => {
   const platform = process.platform;
-  const killCommand = platform === 'darwin' ? 'killall VLC' : platform === 'win32' ? 'taskkill /F /IM vlc.exe' : 'pkill -f vlc';
+  const killCommand = platform === 'darwin' ? 'killall foobar2000' : platform === 'win32' ? 'taskkill /F /IM foobar2000.exe' : 'pkill -f foobar2000';
 
   exec(killCommand, (error) => {
     if (error) {
-      console.log('Warning: Could not kill VLC process (it might not be running):', error);
-      // Still send a success response, as the goal is to have no VLC running
-      return res.json({ success: true, message: 'Playback stopped (VLC may not have been running).' });
+      console.log('Warning: Could not kill foobar2000 process (it might not be running):', error);
+      // Still send a success response, as the goal is to have no foobar2000 running
+      return res.json({ success: true, message: 'Playback stopped (foobar2000 may not have been running).' });
     }
-    currentVlcProcess = null;
+    currentFoobar2000Process = null;
     res.json({ success: true, message: 'Playback stopped successfully' });
   });
 });
 
 // Update the cleanup handler for server shutdown as well
 process.on('SIGINT', () => {
-  if (currentVlcProcess) {
+  if (currentFoobar2000Process) {
     const platform = process.platform;
     const killCommand = platform === 'darwin' ? 
-      'killall VLC' : 
+      'killall foobar2000' : 
       platform === 'win32' ? 
-        'taskkill /F /IM vlc.exe' : 
-        'pkill -f vlc';
+        'taskkill /F /IM foobar2000.exe' : 
+        'pkill -f foobar2000';
     
     exec(killCommand, (error) => {
       if (error) {
-        console.log('Warning: Could not kill VLC process on shutdown:', error);
+        console.log('Warning: Could not kill foobar2000 process on shutdown:', error);
       }
       process.exit(0);
     });
