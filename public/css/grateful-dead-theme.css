@@ -16,7 +16,7 @@ body {
   background-color: #1c1c1c;  /* Dark background */
   min-height: 100vh;  /* Ensure it covers full viewport height */
   margin: 0;
-  padding: 20px;
+  padding: 8px;
 }
 
 /* Container background for better contrast */
