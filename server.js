@@ -7,7 +7,7 @@ const { parse } = require('csv-parse');
 const dayjs = require('dayjs');
 const { extractDatesFromFolders } = require('./utils/extractDates');
 const { combineShowTables } = require('./utils/combineShows');
-const { findTextFiles, readTextFile, findAudioFiles, findImageFile, formatFileSize } = require('./utils/fileUtils');
+const { findTextFiles, readTextFile, findAudioFiles, findImageFile, formatFileSize, findShowArtwork } = require('./utils/fileUtils');
 const { spawn, exec } = require('child_process');
 
 // Initialize Express app
@@ -280,7 +280,7 @@ app.get('/api/shows/:year', (req, res) => {
 });
 
 // API endpoint to get show content (text files and audio files)
-app.get('/api/show-content', (req, res) => {
+app.get('/api/show-content', async (req, res) => {
   try {
     const { path: showPath } = req.query;
     
@@ -298,8 +298,10 @@ app.get('/api/show-content', (req, res) => {
     // Find audio files in the selected folder
     const audioFiles = findAudioFiles(showPath);
     
-    // Find an image file in the selected folder
-    const imagePath = findImageFile(showPath);
+    // Find artwork using 3-tier priority system (FLAC metadata, folder images, default)
+    console.log(`🎨 Artwork Debug: Looking for artwork in ${showPath}`);
+    const artwork = await findShowArtwork(showPath);
+    console.log(`🎨 Artwork Debug: Found artwork:`, artwork ? `${artwork.type} artwork` : 'No artwork found');
     
     // Format text files for display
     const formattedTextFiles = textFiles.map(file => ({
@@ -341,7 +343,7 @@ app.get('/api/show-content', (req, res) => {
         number: index + 1,
         name: file.filename
       })),
-      imagePath
+      artwork
     });
   } catch (error) {
     console.error('Error fetching show content:', error);
