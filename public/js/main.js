@@ -236,12 +236,20 @@ async function loadShowContent(showPath) {
       return;
     }
     
-    // Update the play button image
+    // Update the play button image using 3-tier priority system
     const playButtonImg = showBrowserElements.playConcert.querySelector('img');
-    if (data.imagePath) {
-      playButtonImg.src = `/api/image?path=${encodeURIComponent(data.imagePath)}`;
-      playButtonImg.alt = 'Custom show image - Click to Play Show';
+    if (data.artwork) {
+      if (data.artwork.type === 'embedded') {
+        // Use embedded FLAC artwork
+        playButtonImg.src = data.artwork.dataUri;
+        playButtonImg.alt = `Embedded artwork from ${data.artwork.source} - Click to Play Show`;
+      } else if (data.artwork.type === 'file') {
+        // Use folder image file
+        playButtonImg.src = `/api/image?path=${encodeURIComponent(data.artwork.path)}`;
+        playButtonImg.alt = 'Custom show image - Click to Play Show';
+      }
     } else {
+      // Default Hampton ticket
       playButtonImg.src = '/images/hamptonTicket.jpg';
       playButtonImg.alt = 'Hampton Ticket - Click to Play Show';
     }

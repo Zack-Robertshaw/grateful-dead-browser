@@ -234,10 +234,79 @@ function formatFileSize(sizeBytes) {
     `${size.toFixed(size >= 10 ? 1 : 2)} ${units[i]}`;
 }
 
+/**
+ * Extract embedded artwork from the first FLAC file found
+ * 
+ * @param {string} folderPath - Path to the folder to search
+ * @returns {Object|null} - The artwork data or null if not found
+ */
+async function extractFlacArtwork(folderPath) {
+  const flacFiles = findAudioFiles(folderPath)
+    .filter(file => file.format.toLowerCase() === 'flac')
+    .filter(file => !file.filename.startsWith('._')); // Filter out macOS metadata files
+  
+  console.log(`🎵 FLAC Debug: Found ${flacFiles.length} FLAC files in ${folderPath}`);
+  
+  if (flacFiles.length === 0) return null;
+  
+  // Just use the first FLAC file found
+  try {
+    const mm = require('music-metadata');
+    const targetFile = flacFiles[0].full_path;
+    console.log(`🎵 FLAC Debug: Attempting to read metadata from ${targetFile}`);
+    
+    const metadata = await mm.parseFile(targetFile);
+    console.log(`🎵 FLAC Debug: Metadata parsed successfully`);
+    console.log(`🎵 FLAC Debug: Has common.picture?`, !!metadata.common.picture);
+    
+    if (metadata.common.picture && metadata.common.picture.length > 0) {
+      console.log(`🎵 FLAC Debug: Found ${metadata.common.picture.length} embedded pictures`);
+      const picture = metadata.common.picture[0];
+      console.log(`🎵 FLAC Debug: Picture format: ${picture.format}, data length: ${picture.data.length}`);
+      
+      return {
+        type: 'embedded',
+        dataUri: `data:${picture.format};base64,${picture.data.toString('base64')}`,
+        source: flacFiles[0].filename
+      };
+    } else {
+      console.log(`🎵 FLAC Debug: No embedded pictures found`);
+    }
+  } catch (error) {
+    console.error(`🎵 FLAC Debug: Error reading FLAC artwork from ${flacFiles[0].filename}:`, error);
+  }
+  
+  return null;
+}
+
+/**
+ * Find show artwork using 3-tier priority system:
+ * 1. FLAC metadata (first priority)
+ * 2. Folder images (second priority)  
+ * 3. Default image (handled in frontend)
+ * 
+ * @param {string} folderPath - Path to the folder to search
+ * @returns {Object|null} - The artwork data or null if not found
+ */
+async function findShowArtwork(folderPath) {
+  // Priority 1: Check FLAC metadata
+  const flacArtwork = await extractFlacArtwork(folderPath);
+  if (flacArtwork) return flacArtwork;
+  
+  // Priority 2: Check folder images  
+  const folderImage = findImageFile(folderPath);
+  if (folderImage) return { type: 'file', path: folderImage };
+  
+  // Priority 3: Default image (handled in frontend)
+  return null;
+}
+
 module.exports = {
   findTextFiles,
   readTextFile,
   findAudioFiles,
   formatFileSize,
-  findImageFile
+  findImageFile,
+  extractFlacArtwork,
+  findShowArtwork
 };
