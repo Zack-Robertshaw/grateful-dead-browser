@@ -50,6 +50,77 @@ RootDirectory/
 
 The application intelligently extracts dates from any folder naming pattern - whether it's archive.org downloads, etree folders, or custom names. Organizing by year is required.
 
+## Setting Up Your Music Collection Path
+
+### 🎯 **Quick Start**
+1. **Locate your collection**: Find the root directory containing your year-organized Grateful Dead folders
+2. **Run the app**: Start with `npm start` and open `http://localhost:3000`
+3. **Configure path**: Go to the "Show Browser" or "Folder Analysis" tabs and enter your root directory path
+4. **Analyze & Browse**: Click "Run Analysis" to scan your collection. In "Show Browser" year choices will display below. 
+
+### 📂 **Specifying Your Root Directory**
+
+The application needs to know where your Grateful Dead show collection is stored. This is done through the **Folder Analysis** tab in the web interface.
+
+**Your root directory path should point to the folder containing your year-organized shows:**
+
+#### **Example Paths by Platform:**
+
+**macOS:**
+```
+/Users/YourUsername/Music/GratefulDead
+/Volumes/ExternalDrive/Music/grateful_dead
+```
+
+**Windows:**
+```
+C:\Users\YourUsername\Music\GratefulDead
+D:\Music\grateful_dead
+```
+
+**Linux:**
+```
+/home/username/Music/GratefulDead
+/media/username/external-drive/grateful_dead
+```
+
+#### **What the Path Should Contain:**
+Your root directory must be organized by year, like this:
+```
+YourRootDirectory/
+├── 1965/
+├── 1966/
+├── 1977/
+│   ├── gd1977-05-08.sbd.hicks.4982.sbeok.shnf/
+│   ├── Dead Set - 1977-10-29 - Evans Field House/
+│   └── ...
+├── 1985/
+│   ├── gd85-02-19.akgC422.walker.scotton.miller.106685.sbeok.flac16/
+│   └── ...
+└── ...
+```
+
+### 🔄 **Analysis vs. Playback**
+
+**Analysis Phase:**
+- Navigate to the "Folder Analysis" tab
+- Enter your root directory path in the "Root Directory Path" field
+- Click "Run Analysis" to scan your collection
+- Results are saved to your Downloads folder as a CSV file
+
+**Playback Phase:**
+- Switch to the "Show Browser" tab (available after analysis)
+- Browse shows by year and date
+- Click the concert ticket icon to play entire shows in foobar2000
+- The app automatically handles file paths and playlist creation
+
+### ⚠️ **Important Notes**
+
+- **Path Requirements**: Must point to the directory containing year folders (1965, 1977, etc.)
+- **No Renaming Needed**: Works with any folder naming convention from archive.org, etree, or custom names
+- **One-Time Setup**: Path is remembered between sessions
+- **Cross-Platform**: Same interface works on macOS, Windows, and Linux
+
 ## Installation
 
 1. **Install foobar2000** on your system first (see Prerequisites above)
