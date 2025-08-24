@@ -59,7 +59,7 @@
     .tab-pane .form-control,
     .tab-pane .form-select,
     .tab-pane .alert {
-      background-color: rgba(255, 255, 255, 0.9);
+      background-color: rgba(242, 240, 230, 0.9); /* Softer off-white from --gd-background */
       color: var(--gd-text);
     }
   
@@ -273,19 +273,29 @@
                 <input type="checkbox" class="form-check-input" id="use-analysis">
                 <label class="form-check-label" for="use-analysis">Use analysis results</label>
               </div>
-              
-              <!-- Root directory input (shown when not using analysis) -->
-              <div class="mb-3" id="root-dir-container">
-                <label for="browser-root-dir" class="form-label">Root Directory Path:</label>
-                <input type="text" class="form-control" id="browser-root-dir" 
-                       value="<%= data.rootDirectory || '/Volumes/PiMedia/music/grateful_dead' %>">
+
+              <!-- Music Library Path and Library Selection -->
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="music-library-path" class="form-label">Music Library Path:</label>
+                  <select class="form-select" id="music-library-path">
+                    <option value="/Users/zackrobertshaw/all_flac_music">Local</option>
+                    <option value="/Volumes/PiMedia/network_all_flac_music">Network</option>
+                  </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="artist-select" class="form-label">Choose Library:</label>
+                  <select class="form-select" id="artist-select" disabled>
+                    <option value="">Loading libraries...</option>
+                  </select>
+                </div>
               </div>
               
               <!-- Year selection -->
               <div class="mb-3">
-                <label for="year-select" class="form-label">Select Year:</label>
+                <label for="year-select" id="year-select-label" class="form-label">Select Year:</label>
                 <select class="form-select" id="year-select" disabled>
-                  <option value="">Loading years...</option>
+                  <option value="">Loading...</option>
                 </select>
               </div>
               
@@ -345,16 +355,10 @@
         <div class="row">
           <div class="col-md-6">
             <h3>Analyze Grateful Dead Show Folders</h3>
+            <p class="text-muted small">Note: This analysis will run on the "Grateful Dead" folder found in the Music Library Path specified on the "Show Browser" tab.</p>
             
             <!-- Analysis form -->
             <form id="analysis-form">
-              <div class="mb-3">
-                <label for="root-directory" class="form-label">Root Directory Path:</label>
-                <input type="text" class="form-control" id="root-directory" 
-                       value="<%= data.rootDirectory || '/Volumes/PiMedia/music/grateful_dead' %>">
-              </div>
-              
-
               <div class="mb-3">
                 <label for="output-filename" class="form-label">Output Filename:</label>
                 <input type="text" class="form-control" id="output-filename" value="analysis_results.csv">
@@ -570,4 +574,3 @@ RootDirectory/
   <script src="/js/main.js"></script>
 </body>
 </html>
-```

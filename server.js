@@ -164,53 +164,104 @@ app.get('/download/:filename', (req, res) => {
   }
 });
 
+// API endpoint to get the list of artists by scanning a directory
+app.get('/api/artists', (req, res) => {
+  try {
+    const { libraryPath } = req.query;
+
+    if (!libraryPath || !fs.existsSync(libraryPath)) {
+      return res.status(400).json({ error: 'Music library path is not valid.' });
+    }
+
+    const artists = fs.readdirSync(libraryPath)
+      .map(item => {
+        const itemPath = path.join(libraryPath, item);
+        if (fs.statSync(itemPath).isDirectory() && !item.startsWith('.')) {
+          // --- NEW LOGIC: Clean up artist names ---
+          let displayName = item;
+          if (item.toLowerCase().includes('grateful_dead')) {
+            displayName = 'Grateful Dead';
+          } else if (item.toLowerCase().includes('other_flac')) {
+            displayName = 'Other Flac';
+          } else {
+            // A simple fallback to convert underscores to spaces and capitalize words
+            displayName = item.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+          }
+          return { name: displayName, path: itemPath };
+        }
+        return null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.name.localeCompare(b.name));
+      
+    res.json(artists);
+  } catch (error) {
+    console.error('Error fetching artists:', error);
+    res.status(500).json({ error: `Failed to fetch artists: ${error.message}` });
+  }
+});
+
 // API endpoint to get years (for browser tab)
 app.get('/api/years', (req, res) => {
   try {
-    const { useAnalysis, rootDirectory } = req.query;
+    const { useAnalysis, artistPath } = req.query;
     
-    // Option 1: Using analysis results
+    // Option 1: Using analysis results (remains the same for now)
     if (useAnalysis === 'true' && userPrefs.analyzedData) {
-      // Extract years from analyzed data
       const validShows = userPrefs.analyzedData.filter(show => show.year);
       const years = [...new Set(validShows.map(show => show.year))].sort();
-      
-      return res.json({ years });
+      return res.json({ years, structure: 'years' });
     } 
-    // Option 2: Direct folder browsing
+    // Option 2: Direct folder browsing for a specific artist
     else {
-      const directory = rootDirectory || userPrefs.rootDirectory;
-      
-      if (!fs.existsSync(directory)) {
-        return res.status(400).json({ error: `Root directory not found: ${directory}` });
+      if (!artistPath || !fs.existsSync(artistPath)) {
+        return res.status(400).json({ error: `Artist directory not found: ${artistPath}` });
       }
       
-      // Scan for year folders
-      const yearFolders = [];
-      const yearPattern = /^(19\d{2}|20\d{2})$/;
-      
-      const items = fs.readdirSync(directory);
-      
-      for (const item of items) {
-        const itemPath = path.join(directory, item);
-        if (fs.statSync(itemPath).isDirectory() && yearPattern.test(item)) {
-          yearFolders.push({
-            year: item,
-            path: itemPath
-          });
-        }
-      }
-      
-      // Sort years
-      yearFolders.sort((a, b) => a.year - b.year);
-      
-      return res.json({
-        years: yearFolders.map(folder => folder.year),
-        paths: yearFolders.reduce((acc, folder) => {
-          acc[folder.year] = folder.path;
-          return acc;
-        }, {})
+      const items = fs.readdirSync(artistPath).filter(item => {
+        const itemPath = path.join(artistPath, item);
+        return fs.statSync(itemPath).isDirectory() && !item.startsWith('.');
       });
+
+      const yearPattern = /^(19\d{2}|20\d{2})$/;
+      const yearCount = items.filter(item => yearPattern.test(item)).length;
+      
+      // Heuristic: If at least half the folders are years, or there are at least 5 year folders, assume a year structure.
+      const isYearBased = yearCount > 0 && (yearCount / items.length > 0.5 || yearCount >= 5);
+
+      if (isYearBased) {
+        // Structure is Artist -> Year -> Show
+        const yearFolders = items
+          .filter(item => yearPattern.test(item)) // Only include folders that match the year pattern
+          .map(item => ({
+            year: item,
+            path: path.join(artistPath, item)
+          })).sort((a, b) => a.year.localeCompare(b.year));
+        
+        return res.json({
+          structure: 'years',
+          years: yearFolders.map(folder => folder.year),
+          paths: yearFolders.reduce((acc, folder) => {
+            acc[folder.year] = folder.path;
+            return acc;
+          }, {})
+        });
+      } else {
+        // Structure is Artist -> Sub-folder (e.g. another Artist) -> Show
+        const subFolders = items.map(item => ({
+          label: item,
+          path: path.join(artistPath, item)
+        })).sort((a, b) => a.label.localeCompare(b.label));
+
+        return res.json({
+          structure: 'artists', // This is for the "Other Flac" case
+          artists: subFolders.map(f => f.label),
+          paths: subFolders.reduce((acc, folder) => {
+            acc[folder.label] = folder.path;
+            return acc;
+          }, {})
+        });
+      }
     }
   } catch (error) {
     console.error('Error fetching years:', error);
@@ -218,61 +269,37 @@ app.get('/api/years', (req, res) => {
   }
 });
 
-// API endpoint to get shows for a year
-app.get('/api/shows/:year', (req, res) => {
+// API endpoint to get shows for a year or artist subfolder
+app.get('/api/shows/:folderName', (req, res) => {
   try {
-    const { year } = req.params;
-    const { useAnalysis, yearPath } = req.query;
+    const { folderPath } = req.query;
     
-    // Option 1: Using analysis results
-    if (useAnalysis === 'true' && userPrefs.analyzedData) {
-      const yearShows = userPrefs.analyzedData.filter(show => 
-        show.year && show.year.toString() === year && 
-        show['full path'] // Only include shows with a valid path
-      );
-      
-      // Format the shows for display
-      const showOptions = yearShows.map(show => ({
-        label: `${show.ShowDate} - ${show.folder_name}`,
-        path: show['full path']
-      }));
-      
-      return res.json({ shows: showOptions });
-    } 
-    // Option 2: Direct folder browsing
-    else {
-      if (!yearPath) {
-        return res.status(400).json({ error: 'Year path not provided' });
-      }
-      
-      if (!fs.existsSync(yearPath)) {
-        return res.status(400).json({ error: `Year folder not found: ${yearPath}` });
-      }
-      
-      // Scan the year folder for show folders
-      const showFolders = [];
-      const items = fs.readdirSync(yearPath);
-      
-      for (const item of items) {
-        const itemPath = path.join(yearPath, item);
-        if (fs.statSync(itemPath).isDirectory()) {
-          showFolders.push({
-            name: item,
-            path: itemPath
-          });
-        }
-      }
-      
-      // Sort show folders
-      showFolders.sort((a, b) => a.name.localeCompare(b.name));
-      
-      return res.json({
-        shows: showFolders.map(folder => ({
-          label: folder.name,
-          path: folder.path
-        }))
-      });
+    if (!folderPath) {
+      return res.status(400).json({ error: 'Folder path not provided' });
     }
+    
+    if (!fs.existsSync(folderPath)) {
+      return res.status(400).json({ error: `Folder not found: ${folderPath}` });
+    }
+    
+    // Scan the year folder for show folders
+    const showFolders = fs.readdirSync(folderPath)
+      .map(item => {
+        const itemPath = path.join(folderPath, item);
+        if (fs.statSync(itemPath).isDirectory() && !item.startsWith('.')) {
+          return { name: item, path: itemPath };
+        }
+        return null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.name.localeCompare(b.name));
+    
+    return res.json({
+      shows: showFolders.map(folder => ({
+        label: folder.name,
+        path: folder.path
+      }))
+    });
   } catch (error) {
     console.error('Error fetching shows:', error);
     res.status(500).json({ error: `Failed to fetch shows: ${error.message}` });
