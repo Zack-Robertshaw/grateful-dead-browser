@@ -3,8 +3,8 @@
 const showBrowserElements = {
   useAnalysis: document.getElementById('use-analysis'),
   analysisCheckContainer: document.getElementById('analysis-check-container'),
-  rootDirContainer: document.getElementById('root-dir-container'),
-  browserRootDir: document.getElementById('browser-root-dir'),
+  musicLibraryPathInput: document.getElementById('music-library-path'), // New
+  artistSelect: document.getElementById('artist-select'),
   yearSelect: document.getElementById('year-select'),
   showSelect: document.getElementById('show-select'),
   showContent: document.getElementById('show-content'),
@@ -17,7 +17,6 @@ const showBrowserElements = {
 
 const folderAnalysisElements = {
   analysisForm: document.getElementById('analysis-form'),
-  rootDirectory: document.getElementById('root-directory'),
   outputFilename: document.getElementById('output-filename'),
   analysisResults: document.getElementById('analysis-results'),
   analysisSuccessMessage: document.getElementById('analysis-success-message'),
@@ -32,6 +31,7 @@ const folderAnalysisElements = {
 };
 
 // Global variables
+let currentArtistPath = null; // New
 let currentYearPath = null;
 let currentShowPath = null;
 let currentPlaylist = [];
@@ -39,8 +39,23 @@ let currentPlaylist = [];
 // Run folder analysis
 async function runAnalysis() {
   try {
+    // Find the Grateful Dead artist path from the dropdown in the Show Browser tab
+    const artistOptions = showBrowserElements.artistSelect.options;
+    let gratefulDeadPath = null;
+    for (let i = 0; i < artistOptions.length; i++) {
+      if (artistOptions[i].text.trim() === 'Grateful Dead') {
+        gratefulDeadPath = artistOptions[i].value;
+        break;
+      }
+    }
+
+    if (!gratefulDeadPath) {
+      alert('Could not find the "Grateful Dead" artist. Please ensure it is available in the artist dropdown on the "Show Browser" tab before running the analysis.');
+      return;
+    }
+
     // Get form values
-    const rootDirectory = folderAnalysisElements.rootDirectory.value;
+    const rootDirectory = gratefulDeadPath;
     const outputFilename = folderAnalysisElements.outputFilename.value;
     
     // Validate inputs
@@ -120,67 +135,133 @@ async function checkAnalysisAvailable() {
   }
 }
 
-// Load years based on the selected mode (analysis or direct browsing)
-async function loadYears() {
-  // Clear and disable year select while loading
-  showBrowserElements.yearSelect.innerHTML = '<option value="">Loading years...</option>';
+// Load artists into the dropdown based on the library path
+async function loadArtists() {
+  try {
+    const libraryPath = showBrowserElements.musicLibraryPathInput.value;
+    if (!libraryPath) {
+      showBrowserElements.artistSelect.innerHTML = '<option value="">Enter a library path</option>';
+      return;
+    }
+
+    showBrowserElements.artistSelect.innerHTML = '<option value="">Loading libraries...</option>';
+    showBrowserElements.artistSelect.disabled = true;
+
+    const response = await fetch(`/api/artists?libraryPath=${encodeURIComponent(libraryPath)}`);
+    const artists = await response.json();
+
+    if (artists.error) {
+      showBrowserElements.artistSelect.innerHTML = `<option value="">${artists.error}</option>`;
+      return;
+    }
+
+    if (artists && artists.length > 0) {
+      showBrowserElements.artistSelect.innerHTML = '<option value="">Select a library</option>';
+      artists.forEach(artist => {
+        const option = document.createElement('option');
+        option.value = artist.path;
+        option.textContent = artist.name;
+        showBrowserElements.artistSelect.appendChild(option);
+      });
+      showBrowserElements.artistSelect.disabled = false;
+    } else {
+      showBrowserElements.artistSelect.innerHTML = '<option value="">No libraries found</option>';
+    }
+  } catch (error) {
+    console.error('Error loading artists:', error);
+    showBrowserElements.artistSelect.innerHTML = '<option value="">Error loading libraries</option>';
+  }
+}
+
+// Load content for the selected artist (years or shows)
+async function loadArtistContent(artistPath) {
+  currentArtistPath = artistPath;
+  const yearSelectContainer = showBrowserElements.yearSelect.parentElement;
+  const yearSelectLabel = document.getElementById('year-select-label');
+  const selectedArtistName = showBrowserElements.artistSelect.options[showBrowserElements.artistSelect.selectedIndex].text.trim();
+
+  // Reset dropdowns
+  showBrowserElements.yearSelect.innerHTML = '<option value="">Loading...</option>';
   showBrowserElements.yearSelect.disabled = true;
-  
+  showBrowserElements.showSelect.innerHTML = '<option value="">Select a library first</option>';
+  showBrowserElements.showSelect.disabled = true;
+
   try {
     const useAnalysis = showBrowserElements.useAnalysis && showBrowserElements.useAnalysis.checked;
-    const rootDirectory = showBrowserElements.browserRootDir.value;
-    
-    const response = await fetch(`/api/years?useAnalysis=${useAnalysis}&rootDirectory=${encodeURIComponent(rootDirectory)}`);
+    const response = await fetch(`/api/years?useAnalysis=${useAnalysis}&artistPath=${encodeURIComponent(artistPath)}`);
     const data = await response.json();
-    
+
     if (data.error) {
       showBrowserElements.yearSelect.innerHTML = `<option value="">${data.error}</option>`;
       return;
     }
-    
-    if (data.years && data.years.length > 0) {
-      // Populate year select
-      showBrowserElements.yearSelect.innerHTML = '';
+
+    // Hide year/artist dropdown by default
+    yearSelectContainer.style.display = 'none';
+
+    if (data.structure === 'years') {
+      // Case 1: Grateful Dead (or any artist with Year subfolders)
+      yearSelectContainer.style.display = 'block';
+      yearSelectLabel.textContent = 'Pick a Year:';
+      showBrowserElements.yearSelect.innerHTML = '<option value="">Select a year</option>';
       data.years.forEach(year => {
         const option = document.createElement('option');
         option.value = year;
         option.textContent = year;
         showBrowserElements.yearSelect.appendChild(option);
       });
-      
-      // Store year paths if available
-      if (data.paths) {
-        window.yearPaths = data.paths;
-      }
-      
-      // Enable the select
+      window.genericPaths = data.paths;
       showBrowserElements.yearSelect.disabled = false;
-    } else {
-      showBrowserElements.yearSelect.innerHTML = '<option value="">No years found</option>';
+      showBrowserElements.showSelect.innerHTML = '<option value="">Select a year first</option>';
+
+    } else if (data.structure === 'artists') {
+      // Case 2: Other Flac (with Artist subfolders)
+      yearSelectContainer.style.display = 'block';
+      yearSelectLabel.textContent = 'Select Artist:';
+      showBrowserElements.yearSelect.innerHTML = '<option value="">Select an artist</option>';
+      data.artists.forEach(artist => {
+        const option = document.createElement('option');
+        option.value = artist;
+        option.textContent = artist;
+        showBrowserElements.yearSelect.appendChild(option);
+      });
+      window.genericPaths = data.paths;
+      showBrowserElements.yearSelect.disabled = false;
+      showBrowserElements.showSelect.innerHTML = '<option value="">Select an artist first</option>';
+
+    } else if (data.structure === 'shows') {
+      // Case 3: Artist with Show subfolders directly
+      yearSelectContainer.style.display = 'none';
+      showBrowserElements.showSelect.innerHTML = '<option value="">Select a show</option>';
+      data.shows.forEach(show => {
+        const option = document.createElement('option');
+        option.value = show.path;
+        option.textContent = show.label;
+        showBrowserElements.showSelect.appendChild(option);
+      });
+      showBrowserElements.showSelect.disabled = false;
     }
   } catch (error) {
-    console.error('Error loading years:', error);
-    showBrowserElements.yearSelect.innerHTML = '<option value="">Error loading years</option>';
+    console.error('Error loading artist content:', error);
+    showBrowserElements.yearSelect.innerHTML = '<option value="">Error loading content</option>';
   }
 }
 
-// Load shows for the selected year
-async function loadShows(year) {
+// Load shows for the selected year or artist
+async function loadShows(selection) {
   // Clear and disable show select while loading
   showBrowserElements.showSelect.innerHTML = '<option value="">Loading shows...</option>';
   showBrowserElements.showSelect.disabled = true;
   
   try {
-    const useAnalysis = showBrowserElements.useAnalysis && showBrowserElements.useAnalysis.checked;
-    
-    // Determine year path
-    let yearPath = '';
-    if (!useAnalysis && window.yearPaths) {
-      yearPath = window.yearPaths[year];
-      currentYearPath = yearPath;
+    // Determine path from the generic paths map
+    const folderPath = window.genericPaths ? window.genericPaths[selection] : '';
+    if (!folderPath) {
+      showBrowserElements.showSelect.innerHTML = '<option value="">Could not find path for selection</option>';
+      return;
     }
     
-    const response = await fetch(`/api/shows/${year}?useAnalysis=${useAnalysis}&yearPath=${encodeURIComponent(yearPath)}`);
+    const response = await fetch(`/api/shows/${selection}?folderPath=${encodeURIComponent(folderPath)}`);
     const data = await response.json();
     
     if (data.error) {
@@ -201,7 +282,7 @@ async function loadShows(year) {
       // Enable the select
       showBrowserElements.showSelect.disabled = false;
     } else {
-      showBrowserElements.showSelect.innerHTML = '<option value="">No shows found for this year</option>';
+      showBrowserElements.showSelect.innerHTML = '<option value="">No shows found for this selection</option>';
     }
   } catch (error) {
     console.error('Error loading shows:', error);
@@ -249,9 +330,15 @@ async function loadShowContent(showPath) {
         playButtonImg.alt = 'Custom show image - Click to Play Show';
       }
     } else {
-      // Default Hampton ticket
-      playButtonImg.src = '/images/hamptonTicket.jpg';
-      playButtonImg.alt = 'Hampton Ticket - Click to Play Show';
+      // Default image based on selected library
+      const selectedArtistName = showBrowserElements.artistSelect.options[showBrowserElements.artistSelect.selectedIndex].text;
+      if (selectedArtistName === 'Other Flac') {
+        playButtonImg.src = '/images/tickets.jpeg';
+        playButtonImg.alt = 'Tickets - Click to Play Show';
+      } else {
+        playButtonImg.src = '/images/hamptonTicket.jpg';
+        playButtonImg.alt = 'Hampton Ticket - Click to Play Show';
+      }
     }
     
     // Update text files dropdown
@@ -377,19 +464,50 @@ async function playConcert(startIndex = 0) {
 // Event Listeners
 document.addEventListener('DOMContentLoaded', async () => {
   // Check if analysis data is available
-  const analysisAvailable = await checkAnalysisAvailable();
+  await checkAnalysisAvailable();
   
-  // Initialize show browser
-  if (showBrowserElements.useAnalysis) {
-    showBrowserElements.useAnalysis.addEventListener('change', () => {
-      const useAnalysis = showBrowserElements.useAnalysis.checked;
-      showBrowserElements.rootDirContainer.style.display = useAnalysis ? 'none' : 'block';
-      loadYears();
+  // Load saved library path from localStorage
+  const savedLibraryPath = localStorage.getItem('musicLibraryPath');
+  if (savedLibraryPath && showBrowserElements.musicLibraryPathInput) {
+    showBrowserElements.musicLibraryPathInput.value = savedLibraryPath;
+  }
+
+  // Initialize show browser by loading artists from the default or saved path
+  loadArtists();
+
+  if (showBrowserElements.musicLibraryPathInput) {
+    showBrowserElements.musicLibraryPathInput.addEventListener('change', () => {
+      // Save the new path to localStorage
+      localStorage.setItem('musicLibraryPath', showBrowserElements.musicLibraryPathInput.value);
+      loadArtists();
     });
   }
-  
-  if (showBrowserElements.browserRootDir) {
-    showBrowserElements.browserRootDir.addEventListener('change', loadYears);
+
+  if (showBrowserElements.artistSelect) {
+    showBrowserElements.artistSelect.addEventListener('change', () => {
+      const selectedArtistPath = showBrowserElements.artistSelect.value;
+      const selectedArtistName = showBrowserElements.artistSelect.options[showBrowserElements.artistSelect.selectedIndex].text;
+      const playButtonImg = showBrowserElements.playConcert.querySelector('img');
+
+      if (selectedArtistName === 'Other Flac') {
+        playButtonImg.src = '/images/tickets.jpeg';
+        playButtonImg.alt = 'Tickets - Click to Play Show';
+      } else {
+        playButtonImg.src = '/images/hamptonTicket.jpg';
+        playButtonImg.alt = 'Hampton Ticket - Click to Play Show';
+      }
+
+      if (selectedArtistPath) {
+        loadArtistContent(selectedArtistPath);
+      } else {
+        // Reset and disable year/show selects if no artist is chosen
+        showBrowserElements.yearSelect.innerHTML = '<option value="">Select a library first</option>';
+        showBrowserElements.yearSelect.disabled = true;
+        showBrowserElements.showSelect.innerHTML = '<option value="">Select a library first</option>';
+        showBrowserElements.showSelect.disabled = true;
+        showBrowserElements.yearSelect.parentElement.style.display = 'block'; // Show year select again
+      }
+    });
   }
   
   if (showBrowserElements.yearSelect) {
@@ -444,7 +562,4 @@ document.addEventListener('DOMContentLoaded', async () => {
       runAnalysis();
     });
   }
-  
-  // Load years when the page loads
-  loadYears();
 });

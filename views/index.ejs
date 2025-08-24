@@ -59,7 +59,7 @@
     .tab-pane .form-control,
     .tab-pane .form-select,
     .tab-pane .alert {
-      background-color: rgba(255, 255, 255, 0.9);
+      background-color: rgba(242, 240, 230, 0.9); /* Softer off-white from --gd-background */
       color: var(--gd-text);
     }
   
@@ -273,19 +273,29 @@
                 <input type="checkbox" class="form-check-input" id="use-analysis">
                 <label class="form-check-label" for="use-analysis">Use analysis results</label>
               </div>
-              
-              <!-- Root directory input (shown when not using analysis) -->
-              <div class="mb-3" id="root-dir-container">
-                <label for="browser-root-dir" class="form-label">Root Directory Path:</label>
-                <input type="text" class="form-control" id="browser-root-dir" 
-                       value="<%= data.rootDirectory || '/Volumes/PiMedia/music/grateful_dead' %>">
+
+              <!-- Music Library Path and Library Selection -->
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="music-library-path" class="form-label">Music Library Path:</label>
+                  <select class="form-select" id="music-library-path">
+                    <option value="/Users/zackrobertshaw/all_flac_music">Local Drive</option>
+                    <option value="/Volumes/PiMedia/network_all_flac_music">Network Drive</option>
+                  </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="artist-select" class="form-label">Choose Library:</label>
+                  <select class="form-select" id="artist-select" disabled>
+                    <option value="">Loading libraries...</option>
+                  </select>
+                </div>
               </div>
               
               <!-- Year selection -->
               <div class="mb-3">
-                <label for="year-select" class="form-label">Select Year:</label>
+                <label for="year-select" id="year-select-label" class="form-label">Select Year:</label>
                 <select class="form-select" id="year-select" disabled>
-                  <option value="">Loading years...</option>
+                  <option value="">Loading...</option>
                 </select>
               </div>
               
@@ -345,16 +355,10 @@
         <div class="row">
           <div class="col-md-6">
             <h3>Analyze Grateful Dead Show Folders</h3>
+            <p class="text-muted small">Note: This analysis will run on the "Grateful Dead" folder found in the Music Library Path specified on the "Show Browser" tab.</p>
             
             <!-- Analysis form -->
             <form id="analysis-form">
-              <div class="mb-3">
-                <label for="root-directory" class="form-label">Root Directory Path:</label>
-                <input type="text" class="form-control" id="root-directory" 
-                       value="<%= data.rootDirectory || '/Volumes/PiMedia/music/grateful_dead' %>">
-              </div>
-              
-
               <div class="mb-3">
                 <label for="output-filename" class="form-label">Output Filename:</label>
                 <input type="text" class="form-control" id="output-filename" value="analysis_results.csv">
@@ -443,121 +447,49 @@
           <div class="col-md-10 offset-md-1">
             <h2 class="text-center mb-4">Greatest Story Ever Told</h2>
             
-            <div class="row mb-4">
+            <div class="row mb-4 align-items-center">
               <div class="col-md-4 text-center">
                 <img src="/images/steal-your-face.jpg" alt="Steal Your Face" class="img-fluid" style="max-height: 200px;">
               </div>
               <div class="col-md-8">
-                <h3>Grateful Dead Show Collection Browser & Analyzer</h3>
+                <h3>A Flexible Music Browser with foobar2000 Integration</h3>
                 <p>
-                  This application helps organize and explore your Grateful Dead show recordings with seamless <strong>foobar2000</strong> integration for high-quality audio playback:
+                  This application provides a simple and powerful way to browse your local music collection and play it instantly with foobar2000. It's designed to be flexible, with special features for Grateful Dead fans.
                 </p>
-                <ol>
-                  <li>Offering an intuitive browser interface to explore show details and setlists</li>
-                  <li>Enabling one-click concert playback with foobar2000 in perfect track order</li>
-                  <li>Automatic playlist generation and metadata file filtering for reliable playback</li>
-                  <li>Analyzing folder names to extract dates in various formats</li>
-                  <li>Matching folder dates with a built-in database of 2,087 verified shows</li>
-                </ol>
               </div>
             </div>
             
-            <h3 class="mt-4">File Structure</h3>
-            <p>
-              <strong>No renaming required!</strong> The application works with folder names exactly as downloaded. 
-              Here's an example of what your collection might look like:
-            </p>
-            <pre class="p-3 rounded" style="background-color: black; color: white;">
-RootDirectory/
-├── 1985/
-│   ├── gd85-02-19.akgC422.walker.scotton.miller.106685.sbeok.flac16/
-│   ├── gd85-03-09.sbd.miller.104962.flac16/
-│   ├── gd85-03-22.141206.remastered....known.Bryant.Miller.Noel.t-flac16/
-│   └── ...
-├── 1977/
-│   ├── gd1977-05-08.sbd.hicks.4982.sbeok.shnf/
-│   ├── Dead Set - 1977-10-29 - Evans Field House/
-│   └── ...
-└── ...</pre>
-            <p>
-              The application intelligently extracts dates from any folder naming pattern - whether it's archive.org downloads, 
-              etree folders, or custom names. Organizing by year is required.
-            </p>
-
             <h3 class="mt-4">How to Use</h3>
             <ol>
-              <li>Use the "Show Browser" tab to explore shows by year and view text files with show details</li>
-              <li>Click the ticket to listen to entire shows in foobar2000 with perfect track ordering</li>
-              <li>The app automatically creates temporary playlists for seamless concert playback</li>
-              <li>In the "Folder Analysis" tab, specify the root directory containing your Grateful Dead recordings</li>
-              <li>Run the analysis to extract and match show information - results automatically save to your Downloads folder</li>
+              <li>Select your music library location from the **"Music Library Path"** dropdown.</li>
+              <li>Choose a library, such as "Grateful Dead" or "Other Flac."</li>
+              <li>Depending on your choice, select a year or an artist, and then pick a show.</li>
+              <li>Click the ticket image to play the entire show in foobar2000.</li>
             </ol>
-            
-            <h3 class="mt-4">Features</h3>
+
+            <h3 class="mt-4">Key Features</h3>
             <ul>
-              <li><strong>Advanced foobar2000 Integration:</strong> Temporary M3U playlist generation, automatic metadata filtering, and smart process management</li>
-              <li><strong>Perfect Audio Playback:</strong> Gapless playback with exact concert sequence preservation</li>
-              <li><strong>Smart Date Extraction:</strong> Recognizes multiple folder name formats and date patterns</li>
-              <li><strong>Built-in Show Database:</strong> 2,087 verified Grateful Dead shows with no external dependencies</li>
-              <li><strong>Automatic File Filtering:</strong> Excludes macOS metadata files and hidden files for clean playback</li>
-              <li><strong>Text File Viewer:</strong> Browse setlists, show notes, and recording information</li>
-              <li><strong>Audio File Browser:</strong> View files by format with size information</li>
-              <li><strong>One-Click Concert Playback:</strong> Just click the ticket to start any show with perfect track ordering</li>
-              <li><strong>Comprehensive Statistics:</strong> Coverage analysis and folder matching reports</li>
-              <li><strong>Flexible Browsing:</strong> Explore shows independently or use analysis results</li>
+              <li><strong>Dynamic Library Browsing:</strong> The interface adapts to your library's structure, whether it's organized by year (for the Grateful Dead) or by artist.</li>
+              <li><strong>One-Click Playback:</strong> Seamlessly play entire albums or shows in foobar2000 with perfect, gapless track ordering.</li>
+              <li><strong>Grateful Dead Folder Analysis:</strong> A specialized tool that scans your Grateful Dead collection to provide detailed statistics and coverage information.</li>
+              <li><strong>Built-in Grateful Dead Database:</strong> Includes data for 2,087 verified shows, ensuring accurate analysis and browsing.</li>
+              <li><strong>Text File Viewer:</strong> Read setlists and other notes included with your music files.</li>
+            </ul>
+            
+            <h3 class="mt-4">foobar2000 Integration</h3>
+            <p>
+              This application leverages **foobar2000** for its superior audio playback capabilities, including:
+            </p>
+            <ul>
+              <li>Gapless playback and perfect track ordering.</li>
+              <li>High-quality audio support for lossless formats like FLAC.</li>
+              <li>Smart process management to ensure a smooth listening experience.</li>
             </ul>
             
             <h3 class="mt-4">About the Data</h3>
             <p>
-              The application includes a complete database of 2,087 verified Grateful Dead shows spanning from 1965 to 1995. 
-              This built-in database eliminates the need for external files and ensures consistent, reliable show information.
-            </p>
-            <p>
-              The show database was created from the comprehensive <strong>"Every Time Played" Excel spreadsheet</strong>, 
-              which catalogs every known Grateful Dead performance. This authoritative reference is available for download at 
-              <a href="https://www.gratefuldeadbook.com/product-page/every-time-played-excel-spreadsheet" target="_blank" class="text-decoration-none">
-                gratefuldeadbook.com
-              </a> and serves as the foundation for accurate show identification and matching.
-            </p>
-            <p>
-              The show data is combined with your folder structure analysis to provide comprehensive insights into your collection, 
-              including coverage statistics and missing shows.
-            </p>
-            <p>
-              All show and folder images courtesy of Lossless Legs user Easter_Everywhere.  They're awesome!
-            </p>
-            <h3 class="mt-4">foobar2000 Player Integration</h3>
-            <p>
-              This application uses <strong>foobar2000</strong> for superior audio playback with advanced technical features:
-            </p>
-            
-            <h4>🎵 Playback Features</h4>
-            <ul>
-              <li><strong>Perfect track ordering:</strong> Maintains the exact concert sequence</li>
-              <li><strong>Gapless playback:</strong> Seamless transitions between tracks</li>
-              <li><strong>High-quality audio:</strong> Optimized for FLAC and other lossless formats</li>
-              <li><strong>Auto-cleanup:</strong> Closes previous instances when starting new shows</li>
-            </ul>
-            
-            <h4>⚙️ Technical Implementation</h4>
-            <ul>
-              <li><strong>Temporary M3U playlists:</strong> Creates playlist files for reliable multi-track playback</li>
-              <li><strong>Metadata filtering:</strong> Automatically excludes macOS `._` files and hidden files</li>
-              <li><strong>Process management:</strong> Smart handling of foobar2000 instances</li>
-              <li><strong>Cross-platform support:</strong> Works on macOS, Windows, and Linux (via Wine)</li>
-            </ul>
-            
-            <h4>🚀 User Experience</h4>
-            <ul>
-              <li><strong>One-click playback:</strong> Just click the ticket image to start any show</li>
-              <li><strong>Automatic switching:</strong> Selecting a new show closes the current one and starts the new one</li>
-              <li><strong>No manual playlist creation:</strong> The app handles all playlist management automatically</li>
-            </ul>
-            
-            <p>
-              <strong>Installation Required:</strong> Download foobar2000 from 
-              <a href="https://www.foobar2000.org/mac" target="_blank" class="text-decoration-none">foobar2000.org/mac</a> (macOS) 
-              or <a href="https://www.foobar2000.org/" target="_blank" class="text-decoration-none">foobar2000.org</a> (Windows).
+              The built-in Grateful Dead show database is sourced from the comprehensive **"Every Time Played" Excel spreadsheet**, a valuable resource for collectors, available at 
+              <a href="https://www.gratefuldeadbook.com/product-page/every-time-played-excel-spreadsheet" target="_blank" class="text-decoration-none">gratefuldeadbook.com</a>.
             </p>
           </div>
         </div>
@@ -570,4 +502,3 @@ RootDirectory/
   <script src="/js/main.js"></script>
 </body>
 </html>
-```
