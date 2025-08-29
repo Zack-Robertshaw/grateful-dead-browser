@@ -9,6 +9,7 @@ const { extractDatesFromFolders } = require('./utils/extractDates');
 const { combineShowTables } = require('./utils/combineShows');
 const { findTextFiles, readTextFile, findAudioFiles, findImageFile, formatFileSize, findShowArtwork } = require('./utils/fileUtils');
 const { spawn, exec } = require('child_process');
+const axios = require('axios');
 
 // Initialize Express app
 const app = express();
@@ -206,13 +207,18 @@ app.get('/api/years', (req, res) => {
   try {
     const { useAnalysis, artistPath } = req.query;
     
-    // Option 1: Using analysis results (remains the same for now)
-    if (useAnalysis === 'true' && userPrefs.analyzedData) {
-      const validShows = userPrefs.analyzedData.filter(show => show.year);
-      const years = [...new Set(validShows.map(show => show.year))].sort();
-      return res.json({ years, structure: 'years' });
+    // Using analysis results
+    if (useAnalysis === 'true') {
+      if (userPrefs.analyzedData) {
+        const validShows = userPrefs.analyzedData.filter(show => show.year);
+        const years = [...new Set(validShows.map(show => show.year))].sort();
+        return res.json({ years, structure: 'years' });
+      } else {
+        // If analysis is requested but not run, return empty
+        return res.json({ years: [], structure: 'years' });
+      }
     } 
-    // Option 2: Direct folder browsing for a specific artist
+    // Direct folder browsing
     else {
       if (!artistPath || !fs.existsSync(artistPath)) {
         return res.status(400).json({ error: `Artist directory not found: ${artistPath}` });
@@ -368,7 +374,8 @@ app.get('/api/show-content', async (req, res) => {
       sortedPlaylist: sortedFiles.map(file => file.path),
       trackOrder: sortedFiles.map((file, index) => ({
         number: index + 1,
-        name: file.filename
+        name: file.filename,
+        path: file.path
       })),
       artwork
     });
@@ -494,33 +501,6 @@ app.post('/api/play-concert', (req, res) => {
       foobarCmd = 'foobar2000';
     }
 
-    // Function to kill existing foobar2000 process
-    const killExistingFoobar2000 = () => {
-      return new Promise((resolve) => {
-        if (!currentFoobar2000Process) {
-          resolve();
-          return;
-        }
-
-        const killCommand = platform === 'darwin' ? 
-          'killall foobar2000' : 
-          platform === 'win32' ? 
-            'taskkill /F /IM foobar2000.exe' : 
-            'pkill -f foobar2000';
-
-        exec(killCommand, (error) => {
-          if (error) {
-            console.log('Warning: Could not kill existing foobar2000 process:', error);
-          }
-          // Even if there's an error, we proceed after a delay
-          setTimeout(() => {
-            currentFoobar2000Process = null;
-            resolve();
-          }, 1000);
-        });
-      });
-    };
-
     // Function to start new foobar2000 process
     const startNewFoobar2000 = () => {
       return new Promise((resolve, reject) => {
@@ -533,17 +513,17 @@ app.post('/api/play-concert', (req, res) => {
           const playlistContent = orderedFilePaths.join('\n');
           fs.writeFileSync(tempPlaylistPath, playlistContent);
           
-          console.log(`Starting foobar2000 with playlist file containing ${orderedFilePaths.length} files`);
-          console.log('Playlist file:', tempPlaylistPath);
-          console.log('First few files:', orderedFilePaths.slice(0, 3));
+          console.log(`Loading playlist into foobar2000 with ${orderedFilePaths.length} files`);
           
           // Start foobar2000 with the playlist file
+          // This will load the playlist into the currently running instance.
           const foobarProcess = spawn(foobarCmd, [tempPlaylistPath], {
             detached: true,
             stdio: 'ignore'
           });
-          currentFoobar2000Process = foobarProcess; // Assign to global
-          console.log('foobar2000 process started with playlist file');
+
+          // We no longer track the process, as we are not killing it.
+          // The user is responsible for managing the main foobar2000 instance.
           
           // Clean up playlist file after a delay
           setTimeout(() => {
@@ -557,26 +537,15 @@ app.post('/api/play-concert', (req, res) => {
             }
           }, 5000); // Clean up after 5 seconds
 
-          // Handle process exit
-          currentFoobar2000Process.on('exit', (code) => {
-            console.log('foobar2000 process exited with code:', code);
-            currentFoobar2000Process = null;
-          });
-
-          // Handle errors
-          currentFoobar2000Process.on('error', (err) => {
+          foobarProcess.on('error', (err) => {
             console.error('Failed to start foobar2000:', err);
             reject(err);
           });
 
-          // Wait a short time to ensure process started
+          // Assume success after a short delay
           setTimeout(() => {
-            if (currentFoobar2000Process) {
-              resolve();
-            } else {
-              reject(new Error('foobar2000 process did not start in time.'));
-            }
-          }, 1000); // 1-second delay
+            resolve();
+          }, 1000);
 
         } catch (error) {
           console.error('Error starting foobar2000 process:', error);
@@ -585,9 +554,8 @@ app.post('/api/play-concert', (req, res) => {
       });
     };
 
-    // Execute the kill and start sequence
-    killExistingFoobar2000()
-      .then(startNewFoobar2000)
+    // Execute the start sequence
+    startNewFoobar2000()
       .then(() => {
         res.json({
           success: true,
@@ -625,6 +593,37 @@ app.post('/api/stop', (req, res) => {
     currentFoobar2000Process = null;
     res.json({ success: true, message: 'Playback stopped successfully' });
   });
+});
+
+// API endpoint to get the currently playing track from foobar2000 using Beefweb
+app.get('/api/now-playing', async (req, res) => {
+  try {
+    // Query Beefweb API for player state
+    const playerResponse = await axios.get('http://localhost:8888/api/player', {
+      timeout: 1000,
+      params: {
+        columns: ['%path%']
+      }
+    });
+    
+    const playerData = playerResponse.data.player;
+
+    if (playerData && playerData.activeItem && playerData.activeItem.columns[0]) {
+      const path = playerData.activeItem.columns[0];
+      console.log('Now Playing:', path); // Server-side logging
+      res.json({
+        isPlaying: true,
+        path: path
+      });
+    } else {
+      console.log('Foobar is open, but nothing is playing.'); // Server-side logging
+      res.json({ isPlaying: false });
+    }
+  } catch (error) {
+    // If foobar2000 isn't running or doesn't respond, send isPlaying: false
+    // console.log('Could not connect to foobar2000 Beefweb. Is it running with the component installed?'); // Server-side logging
+    res.json({ isPlaying: false });
+  }
 });
 
 // Update the cleanup handler for server shutdown as well
