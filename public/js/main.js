@@ -562,4 +562,55 @@ document.addEventListener('DOMContentLoaded', async () => {
       runAnalysis();
     });
   }
+
+  // Hide the analysis check container initially
+  const analysisCheckContainer = showBrowserElements.analysisCheckContainer;
+  if (analysisCheckContainer) {
+    analysisCheckContainer.style.display = 'none';
+  }
+
+  // --- Now Playing Polling ---
+  let nowPlayingPath = null;
+  const trackListContainer = document.getElementById('track-list');
+
+  async function updateNowPlaying() {
+    try {
+      const response = await fetch('/api/now-playing');
+      const data = await response.json();
+
+      // --- Debugging ---
+      if (data.isPlaying) {
+        console.log("Foobar is playing:", data.path);
+      }
+      // --- End Debugging ---
+
+      if (data.isPlaying && data.path !== nowPlayingPath) {
+        nowPlayingPath = data.path;
+        
+        // Remove existing highlights
+        const existingHighlights = trackListContainer.querySelectorAll('.now-playing');
+        existingHighlights.forEach(el => el.classList.remove('now-playing'));
+        
+        // Find and highlight the new track
+        const trackElements = trackListContainer.querySelectorAll('div[data-path]');
+        trackElements.forEach(trackEl => {
+          if (trackEl.dataset.path === nowPlayingPath) {
+            trackEl.classList.add('now-playing');
+          }
+        });
+
+      } else if (!data.isPlaying && nowPlayingPath) {
+        // Music stopped, remove highlights
+        nowPlayingPath = null;
+        const existingHighlights = trackListContainer.querySelectorAll('.now-playing');
+        existingHighlights.forEach(el => el.classList.remove('now-playing'));
+      }
+    } catch (error) {
+      console.error('Error fetching now playing data:', error);
+    }
+  }
+
+  // Start polling every 2 seconds
+  setInterval(updateNowPlaying, 2000);
+
 });
