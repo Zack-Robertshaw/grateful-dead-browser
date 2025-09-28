@@ -354,13 +354,19 @@ async function loadShowContent(showPath) {
       showBrowserElements.textFileSelect.innerHTML = '<option value="">No text files found</option>';
     }
     
-    // Update track list
-    if (data.audioFiles && data.audioFiles.length > 0) {
-      let trackListText = '';
-      data.audioFiles.forEach((file, index) => {
-        trackListText += `${index + 1}. ${file.filename}\n`;
+    // Update track list with individual elements for now playing highlighting
+    if (data.trackOrder && data.trackOrder.length > 0) {
+      // Clear existing content
+      showBrowserElements.trackList.innerHTML = '';
+      
+      // Create individual track elements
+      data.trackOrder.forEach((track) => {
+        const trackElement = document.createElement('div');
+        trackElement.className = 'track-item';
+        trackElement.setAttribute('data-path', track.path);
+        trackElement.textContent = `${track.number}. ${track.name}`;
+        showBrowserElements.trackList.appendChild(trackElement);
       });
-      showBrowserElements.trackList.textContent = trackListText;
     } else {
       showBrowserElements.trackList.textContent = 'No audio files found';
     }
@@ -578,9 +584,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       const response = await fetch('/api/now-playing');
       const data = await response.json();
 
-      // --- Debugging ---
+      // --- Enhanced Debugging ---
       if (data.isPlaying) {
         console.log("Foobar is playing:", data.path);
+        console.log("Available track elements:");
+        const trackElements = trackListContainer.querySelectorAll('div[data-path]');
+        trackElements.forEach(trackEl => {
+          console.log("  Track path:", trackEl.dataset.path);
+        });
+        console.log("Looking for exact match...");
       }
       // --- End Debugging ---
 
@@ -593,11 +605,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Find and highlight the new track
         const trackElements = trackListContainer.querySelectorAll('div[data-path]');
+        let foundMatch = false;
         trackElements.forEach(trackEl => {
           if (trackEl.dataset.path === nowPlayingPath) {
             trackEl.classList.add('now-playing');
+            foundMatch = true;
+            console.log("✅ Found matching track and applied highlight!");
           }
         });
+        
+        if (!foundMatch) {
+          console.log("❌ No matching track found for path:", nowPlayingPath);
+        }
 
       } else if (!data.isPlaying && nowPlayingPath) {
         // Music stopped, remove highlights
