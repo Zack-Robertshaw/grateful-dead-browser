@@ -429,8 +429,200 @@ app.get('/api/image', (req, res) => {
   }
 });
 
+// Check if foobar2000 is already running via Beefweb API
+async function isFoobar2000Running() {
+  try {
+    console.log('Checking if foobar2000 is running via Beefweb API...');
+    const response = await axios.get('http://localhost:8888/api/player', {
+      timeout: 1000
+    });
+    console.log('✅ foobar2000 is running (Beefweb API responded)');
+    return true; // If we get a response, foobar2000 is running
+  } catch (error) {
+    console.log('❌ foobar2000 is not running or Beefweb API not available:', error.message);
+    
+    // Fallback: Check if foobar2000 process is running
+    return await isFoobar2000ProcessRunning();
+  }
+}
+
+// Alternative method: Check if foobar2000 process is running
+async function isFoobar2000ProcessRunning() {
+  return new Promise((resolve) => {
+    const { exec } = require('child_process');
+    const platform = process.platform;
+    let command;
+    
+    if (platform === 'darwin') {
+      command = 'pgrep -f foobar2000';
+    } else if (platform === 'win32') {
+      command = 'tasklist /FI "IMAGENAME eq foobar2000.exe"';
+    } else {
+      command = 'pgrep -f foobar2000';
+    }
+    
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        console.log('❌ No foobar2000 process found');
+        resolve(false);
+      } else {
+        console.log('✅ foobar2000 process is running');
+        resolve(true);
+      }
+    });
+  });
+}
+
+// Kill existing foobar2000 instance
+async function killExistingFoobar2000() {
+  return new Promise((resolve, reject) => {
+    const { exec } = require('child_process');
+    const platform = process.platform;
+    let killCommand;
+    
+    if (platform === 'darwin') {
+      killCommand = 'killall foobar2000';
+    } else if (platform === 'win32') {
+      killCommand = 'taskkill /F /IM foobar2000.exe';
+    } else {
+      killCommand = 'pkill -f foobar2000';
+    }
+    
+    console.log(`Killing existing foobar2000 instance with: ${killCommand}`);
+    
+    exec(killCommand, (error, stdout, stderr) => {
+      if (error) {
+        // If the process wasn't running, that's actually fine
+        if (error.message.includes('not found') || error.message.includes('No such process')) {
+          console.log('✅ No existing foobar2000 instance to kill');
+          resolve();
+        } else {
+          console.error('Error killing foobar2000:', error);
+          reject(error);
+        }
+      } else {
+        console.log('✅ Successfully killed existing foobar2000 instance');
+        resolve();
+      }
+    });
+  });
+}
+
+// Load playlist into existing foobar2000 instance using Beefweb API
+async function loadPlaylistIntoExistingInstance(filePaths) {
+  try {
+    console.log(`Loading playlist into existing foobar2000 instance with ${filePaths.length} files`);
+    
+    // Create a temporary playlist file
+    const os = require('os');
+    const tempPlaylistPath = path.join(os.tmpdir(), `grateful_dead_playlist_${Date.now()}.m3u`);
+    const playlistContent = filePaths.join('\n');
+    fs.writeFileSync(tempPlaylistPath, playlistContent);
+    
+    // Method 1: Try to add files to the current playlist using Beefweb API
+    try {
+      console.log('Attempting to add files to current playlist via Beefweb API...');
+      
+      // Add files to the current playlist
+      const addData = {
+        paths: filePaths
+      };
+      
+      await axios.post('http://localhost:8888/api/playlist/add', addData);
+      
+      // Clear current playlist first, then add new files
+      await axios.post('http://localhost:8888/api/playlist/clear');
+      await axios.post('http://localhost:8888/api/playlist/add', addData);
+      
+      // Start playback
+      await axios.post('http://localhost:8888/api/player/play');
+      
+      console.log('✅ Successfully loaded playlist via Beefweb API');
+      
+    } catch (beefwebError) {
+      console.log('Beefweb API failed, trying alternative method:', beefwebError.message);
+      
+      // Method 2: Use foobar2000 command line to load playlist into existing instance
+      const { spawn } = require('child_process');
+      const platform = process.platform;
+      
+      let foobarCmd;
+      if (platform === 'darwin') {
+        foobarCmd = '/Applications/foobar2000.app/Contents/MacOS/foobar2000';
+      } else if (platform === 'win32') {
+        foobarCmd = 'C:\\Program Files\\foobar2000\\foobar2000.exe';
+      } else {
+        foobarCmd = 'foobar2000';
+      }
+      
+      console.log('Attempting to add files using command line...');
+      
+      // Try different command line approaches
+      const commands = [
+        ['--add', tempPlaylistPath],
+        ['--load', tempPlaylistPath],
+        ['--playlist', tempPlaylistPath]
+      ];
+      
+      let success = false;
+      
+      for (const cmdArgs of commands) {
+        try {
+          console.log(`Trying command: ${foobarCmd} ${cmdArgs.join(' ')}`);
+          
+          const foobarProcess = spawn(foobarCmd, cmdArgs, {
+            detached: true,
+            stdio: 'ignore'
+          });
+          
+          await new Promise((resolve, reject) => {
+            foobarProcess.on('error', (err) => {
+              console.log(`Command failed: ${err.message}`);
+              reject(err);
+            });
+            
+            // Give the command time to execute
+            setTimeout(() => {
+              console.log('Command completed');
+              resolve();
+            }, 2000);
+          });
+          
+          success = true;
+          console.log('✅ Successfully loaded playlist via command line');
+          break;
+          
+        } catch (cmdError) {
+          console.log(`Command failed: ${cmdError.message}`);
+          continue;
+        }
+      }
+      
+      if (!success) {
+        throw new Error('All command line methods failed');
+      }
+    }
+    
+    // Clean up playlist file after a delay
+    setTimeout(() => {
+      try {
+        if (fs.existsSync(tempPlaylistPath)) {
+          fs.unlinkSync(tempPlaylistPath);
+          console.log('Temporary playlist file cleaned up');
+        }
+      } catch (err) {
+        console.log('Warning: Could not clean up temporary playlist file:', err);
+      }
+    }, 5000);
+    
+  } catch (error) {
+    console.error('Error loading playlist into existing foobar2000:', error);
+    throw error;
+  }
+}
+
 // API endpoint to play concert with system player
-app.post('/api/play-concert', (req, res) => {
+app.post('/api/play-concert', async (req, res) => {
   try {
     const { filePaths, startIndex = 0 } = req.body;
 
@@ -554,21 +746,53 @@ app.post('/api/play-concert', (req, res) => {
       });
     };
 
-    // Execute the start sequence
-    startNewFoobar2000()
-      .then(() => {
+    // Check if foobar2000 is already running and handle accordingly
+    const foobarRunning = await isFoobar2000Running();
+    console.log(`foobar2000 running status: ${foobarRunning}`);
+    
+    if (foobarRunning) {
+      // foobar2000 is already running - kill it and start a new instance
+      console.log('foobar2000 is already running. Killing existing instance and starting new one.');
+      
+      try {
+        // Kill existing foobar2000 instance
+        await killExistingFoobar2000();
+        
+        // Wait a moment for the process to fully terminate
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Start new instance
+        await startNewFoobar2000();
+        
         res.json({
           success: true,
-          message: `Playing ${orderedFilePaths.length} tracks with foobar2000`
+          message: `Killed existing foobar2000 instance and started new one with ${orderedFilePaths.length} tracks`
         });
-      })
-      .catch((error) => {
-        console.error('Error managing foobar2000 process:', error);
-        res.status(500).json({ 
-          success: false, 
-          error: `Failed to start playback: ${error.message}` 
+        
+      } catch (error) {
+        console.error('Error killing existing foobar2000 instance:', error);
+        res.status(500).json({
+          success: false,
+          error: 'Failed to restart foobar2000 instance'
         });
-      });
+      }
+    } else {
+      // foobar2000 is not running, start new instance
+      startNewFoobar2000()
+        .then(() => {
+          res.json({
+            success: true,
+            message: `Playing ${orderedFilePaths.length} tracks with foobar2000`
+          });
+        })
+        .catch((error) => {
+          console.error('Error managing foobar2000 process:', error);
+          res.status(500).json({ 
+            success: false, 
+            error: `Failed to start playback: ${error.message}` 
+          });
+        });
+    }
 
   } catch (error) {
     console.error('Error playing concert:', error);
