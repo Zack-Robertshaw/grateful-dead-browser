@@ -28,9 +28,10 @@ The app supports two primary browsing paths:
 ### Hardcoded Music Library Paths
 
 To simplify setup, the application uses a dropdown menu with two preset paths for your music library:
+### NOTE: YOU MUST DESIGNATE YOUR LOCAL PATHS IN THE CODE BEFORE STARTING.  THERE'S NO BROWSE FEATURE TO FIND YOUR FOLDER PATH
 
--   **Local Drive**: `/Users/zackrobertshaw/all_flac_music`
--   **Network Drive**: `/Volumes/PiMedia/network_all_flac_music`
+-   **Local Drive**: `/Users/somewhere/your_folder_name`
+-   **Network Drive**: `/Volumes/PiMedia/your_folder_name`
 
 This eliminates the need for manual path entry and ensures the application can always locate your collection.
 
