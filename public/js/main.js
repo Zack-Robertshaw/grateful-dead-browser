@@ -5,13 +5,18 @@ const showBrowserElements = {
   analysisCheckContainer: document.getElementById('analysis-check-container'),
   musicLibraryPathInput: document.getElementById('music-library-path'), // New
   artistSelect: document.getElementById('artist-select'),
-  yearSelect: document.getElementById('year-select'),
+  yearCarouselContainer: document.getElementById('year-carousel-container'),
+  yearCarousel: document.getElementById('year-carousel'),
+  artistDropdownContainer: document.getElementById('artist-dropdown-container'),
+  artistDropdown: document.getElementById('artist-dropdown'),
   showSelect: document.getElementById('show-select'),
+  showSelectContainer: document.getElementById('show-select-container'),
+  showTimelineContainer: document.getElementById('show-timeline-container'),
+  showTimeline: document.getElementById('show-timeline'),
   showContent: document.getElementById('show-content'),
   noShowSelected: document.getElementById('no-show-selected'),
   textFileSelect: document.getElementById('text-file-select'),
   textFileContent: document.getElementById('text-file-content'),
-  trackList: document.getElementById('track-list'),
   playConcert: document.getElementById('play-concert')
 };
 
@@ -35,6 +40,8 @@ let currentArtistPath = null; // New
 let currentYearPath = null;
 let currentShowPath = null;
 let currentPlaylist = [];
+let currentYear = null; // Track the selected year for timeline
+let isTimelineMode = false; // Track if we're using timeline view
 
 // Run folder analysis
 async function runAnalysis() {
@@ -176,13 +183,11 @@ async function loadArtists() {
 // Load content for the selected artist (years or shows)
 async function loadArtistContent(artistPath) {
   currentArtistPath = artistPath;
-  const yearSelectContainer = showBrowserElements.yearSelect.parentElement;
-  const yearSelectLabel = document.getElementById('year-select-label');
   const selectedArtistName = showBrowserElements.artistSelect.options[showBrowserElements.artistSelect.selectedIndex].text.trim();
 
-  // Reset dropdowns
-  showBrowserElements.yearSelect.innerHTML = '<option value="">Loading...</option>';
-  showBrowserElements.yearSelect.disabled = true;
+  // Reset UI
+  showBrowserElements.yearCarousel.innerHTML = '<div style="padding: 10px; text-align: center;">Loading...</div>';
+  showBrowserElements.artistDropdown.innerHTML = '<option value="">Loading...</option>';
   showBrowserElements.showSelect.innerHTML = '<option value="">Select a library first</option>';
   showBrowserElements.showSelect.disabled = true;
 
@@ -192,46 +197,38 @@ async function loadArtistContent(artistPath) {
     const data = await response.json();
 
     if (data.error) {
-      showBrowserElements.yearSelect.innerHTML = `<option value="">${data.error}</option>`;
+      showBrowserElements.yearCarousel.innerHTML = `<div style="padding: 10px; text-align: center;">${data.error}</div>`;
+      showBrowserElements.artistDropdown.innerHTML = `<option value="">${data.error}</option>`;
       return;
     }
 
-    // Hide year/artist dropdown by default
-    yearSelectContainer.style.display = 'none';
+    // Hide both containers by default
+    showBrowserElements.yearCarouselContainer.style.display = 'none';
+    showBrowserElements.artistDropdownContainer.style.display = 'none';
 
     if (data.structure === 'years') {
-      // Case 1: Grateful Dead (or any artist with Year subfolders)
-      yearSelectContainer.style.display = 'block';
-      yearSelectLabel.textContent = 'Pick a Year:';
-      showBrowserElements.yearSelect.innerHTML = '<option value="">Select a year</option>';
-      data.years.forEach(year => {
-        const option = document.createElement('option');
-        option.value = year;
-        option.textContent = year;
-        showBrowserElements.yearSelect.appendChild(option);
-      });
+      // Case 1: Grateful Dead (or any artist with Year subfolders) - USE CAROUSEL
+      showBrowserElements.yearCarouselContainer.style.display = 'block';
+      renderYearCarousel(data.years);
       window.genericPaths = data.paths;
-      showBrowserElements.yearSelect.disabled = false;
       showBrowserElements.showSelect.innerHTML = '<option value="">Select a year first</option>';
 
     } else if (data.structure === 'artists') {
-      // Case 2: Other Flac (with Artist subfolders)
-      yearSelectContainer.style.display = 'block';
-      yearSelectLabel.textContent = 'Select Artist:';
-      showBrowserElements.yearSelect.innerHTML = '<option value="">Select an artist</option>';
+      // Case 2: Other Flac (with Artist subfolders) - USE DROPDOWN
+      showBrowserElements.artistDropdownContainer.style.display = 'block';
+      showBrowserElements.artistDropdown.innerHTML = '<option value="">Select an artist</option>';
       data.artists.forEach(artist => {
         const option = document.createElement('option');
         option.value = artist;
         option.textContent = artist;
-        showBrowserElements.yearSelect.appendChild(option);
+        showBrowserElements.artistDropdown.appendChild(option);
       });
       window.genericPaths = data.paths;
-      showBrowserElements.yearSelect.disabled = false;
+      showBrowserElements.artistDropdown.disabled = false;
       showBrowserElements.showSelect.innerHTML = '<option value="">Select an artist first</option>';
 
     } else if (data.structure === 'shows') {
       // Case 3: Artist with Show subfolders directly
-      yearSelectContainer.style.display = 'none';
       showBrowserElements.showSelect.innerHTML = '<option value="">Select a show</option>';
       data.shows.forEach(show => {
         const option = document.createElement('option');
@@ -243,16 +240,37 @@ async function loadArtistContent(artistPath) {
     }
   } catch (error) {
     console.error('Error loading artist content:', error);
-    showBrowserElements.yearSelect.innerHTML = '<option value="">Error loading content</option>';
+    showBrowserElements.yearCarousel.innerHTML = '<div style="padding: 10px; text-align: center;">Error loading content</div>';
+    showBrowserElements.artistDropdown.innerHTML = '<option value="">Error loading content</option>';
   }
+}
+
+// Render year carousel
+function renderYearCarousel(years) {
+  showBrowserElements.yearCarousel.innerHTML = '';
+  showBrowserElements.yearCarousel.className = 'year-carousel';
+  
+  years.forEach(year => {
+    const yearCard = document.createElement('div');
+    yearCard.className = 'year-card';
+    yearCard.textContent = year;
+    yearCard.setAttribute('data-year', year);
+    yearCard.addEventListener('click', () => {
+      // Remove selected class from all year cards
+      const allYearCards = showBrowserElements.yearCarousel.querySelectorAll('.year-card');
+      allYearCards.forEach(card => card.classList.remove('selected'));
+      
+      // Add selected class to clicked card
+      yearCard.classList.add('selected');
+      
+      loadShows(year);
+    });
+    showBrowserElements.yearCarousel.appendChild(yearCard);
+  });
 }
 
 // Load shows for the selected year or artist
 async function loadShows(selection) {
-  // Clear and disable show select while loading
-  showBrowserElements.showSelect.innerHTML = '<option value="">Loading shows...</option>';
-  showBrowserElements.showSelect.disabled = true;
-  
   try {
     // Determine path from the generic paths map
     const folderPath = window.genericPaths ? window.genericPaths[selection] : '';
@@ -261,33 +279,374 @@ async function loadShows(selection) {
       return;
     }
     
+    // Check if we're in Grateful Dead mode (year-based structure)
+    const selectedArtistName = showBrowserElements.artistSelect.options[showBrowserElements.artistSelect.selectedIndex].text.trim();
+    isTimelineMode = selectedArtistName === 'Grateful Dead' && /^\d{4}$/.test(selection);
+    
+    if (isTimelineMode) {
+      // Hide dropdown, show timeline
+      showBrowserElements.showSelectContainer.style.display = 'none';
+      showBrowserElements.showTimelineContainer.style.display = 'block';
+      showBrowserElements.showTimeline.innerHTML = '<div class="timeline-loading">Loading shows...</div>';
+      currentYear = selection;
+    } else {
+      // Show dropdown, hide timeline
+      showBrowserElements.showSelectContainer.style.display = 'block';
+      showBrowserElements.showTimelineContainer.style.display = 'none';
+      showBrowserElements.showSelect.innerHTML = '<option value="">Loading shows...</option>';
+      showBrowserElements.showSelect.disabled = true;
+    }
+    
     const response = await fetch(`/api/shows/${selection}?folderPath=${encodeURIComponent(folderPath)}`);
     const data = await response.json();
     
     if (data.error) {
-      showBrowserElements.showSelect.innerHTML = `<option value="">${data.error}</option>`;
+      if (isTimelineMode) {
+        showBrowserElements.showTimeline.innerHTML = `<div class="timeline-empty">${data.error}</div>`;
+      } else {
+        showBrowserElements.showSelect.innerHTML = `<option value="">${data.error}</option>`;
+      }
       return;
     }
     
     if (data.shows && data.shows.length > 0) {
-      // Populate show select
-      showBrowserElements.showSelect.innerHTML = '<option value="">Select a show</option>';
-      data.shows.forEach(show => {
-        const option = document.createElement('option');
-        option.value = show.path;
-        option.textContent = show.label;
-        showBrowserElements.showSelect.appendChild(option);
-      });
-      
-      // Enable the select
-      showBrowserElements.showSelect.disabled = false;
+      if (isTimelineMode) {
+        // Render monthly timeline for Grateful Dead
+        renderMonthlyTimeline(data.shows, selection);
+      } else {
+        // Populate dropdown for other artists
+        showBrowserElements.showSelect.innerHTML = '<option value="">Select a show</option>';
+        data.shows.forEach(show => {
+          const option = document.createElement('option');
+          option.value = show.path;
+          option.textContent = show.label;
+          showBrowserElements.showSelect.appendChild(option);
+        });
+        showBrowserElements.showSelect.disabled = false;
+      }
     } else {
-      showBrowserElements.showSelect.innerHTML = '<option value="">No shows found for this selection</option>';
+      if (isTimelineMode) {
+        showBrowserElements.showTimeline.innerHTML = '<div class="timeline-empty">No shows found for this year</div>';
+      } else {
+        showBrowserElements.showSelect.innerHTML = '<option value="">No shows found for this selection</option>';
+      }
     }
   } catch (error) {
     console.error('Error loading shows:', error);
-    showBrowserElements.showSelect.innerHTML = '<option value="">Error loading shows</option>';
+    if (isTimelineMode) {
+      showBrowserElements.showTimeline.innerHTML = `<div class="timeline-empty">Error loading shows: ${error.message}</div>`;
+    } else {
+      showBrowserElements.showSelect.innerHTML = '<option value="">Error loading shows</option>';
+    }
   }
+}
+
+// Render card carousel for Grateful Dead shows
+function renderMonthlyTimeline(shows, year) {
+  const parseableShows = [];
+  const unparseableShows = [];
+  
+  // Parse dates from show folder names
+  shows.forEach(show => {
+    // Try to extract date from folder name
+    // Supports: gd77-05-04, gd1977-05-04, 1977-05-04, 1974.06.20, gd74-01-xx, 1974-09-09,10,11
+    let dateMatch = show.label.match(/gd?(\d{2,4})[-.](\d{2})[-.](\d{2})/); // With hyphens or dots
+    
+    // Handle "xx" wildcard day (e.g., gd74-01-xx)
+    if (!dateMatch) {
+      dateMatch = show.label.match(/gd?(\d{2,4})[-.](\d{2})[-.]xx/i);
+      if (dateMatch) {
+        // Use day 01 as placeholder for "xx"
+        dateMatch = [dateMatch[0], dateMatch[1], dateMatch[2], '01'];
+      }
+    }
+    
+    // Handle multiple dates (e.g., 1974-09-09,10,11 - just use first date)
+    if (!dateMatch) {
+      dateMatch = show.label.match(/(\d{4})[-.](\d{2})[-.](\d{2}),\d+/);
+    }
+    
+    if (dateMatch) {
+      let [, showYear, month, day] = dateMatch;
+      
+      // Convert 2-digit year to 4-digit year
+      if (showYear.length === 2) {
+        showYear = '19' + showYear;
+      }
+      
+      if (showYear === year) {
+        parseableShows.push({
+          path: show.path,
+          label: show.label,
+          date: `${showYear}-${month}-${day}`,
+          ...parseShowMetadata(show.label)
+        });
+      }
+    } else {
+      unparseableShows.push(show);
+    }
+  });
+  
+  // Sort shows by date
+  parseableShows.sort((a, b) => a.date.localeCompare(b.date));
+  
+  // Build carousel HTML
+  let html = `
+    <div class="carousel-header">
+      <div class="carousel-title">Shows in ${year}</div>
+      <div class="carousel-stats">${parseableShows.length} show${parseableShows.length !== 1 ? 's' : ''}${unparseableShows.length > 0 ? ` • ${unparseableShows.length} other${unparseableShows.length !== 1 ? 's' : ''}` : ''}</div>
+    </div>
+    <div class="show-carousel">
+  `;
+  
+  // Add cards for each parseable show
+  parseableShows.forEach(show => {
+    // Create venue text - use folder label if no venue extracted
+    const venueText = show.venue || show.label.replace(/gd?\d{2,4}-\d{2}-\d{2}\./, '').replace(/\s+/g, ' ').trim();
+    
+    html += `
+      <div class="show-card" data-path="${escapeHtml(show.path)}">
+        <div class="show-card-date">${formatDateShort(show.date)}</div>
+        <div class="show-card-venue">${escapeHtml(venueText)}</div>
+        <div class="show-card-meta">
+          ${show.recordingType ? `<span class="show-card-badge recording-type">${escapeHtml(show.recordingType)}</span>` : ''}
+          ${show.bitrate ? `<span class="show-card-badge bitrate">${escapeHtml(show.bitrate)}</span>` : ''}
+          ${show.shnid ? `<span class="show-card-badge shnid">${escapeHtml(show.shnid)}</span>` : ''}
+        </div>
+      </div>
+    `;
+  });
+  
+  html += `</div>`; // Close carousel
+  
+  // Add unparseable shows section if any exist
+  if (unparseableShows.length > 0) {
+    html += `
+      <div class="timeline-unparseable">
+        <div class="timeline-unparseable-header">
+          <span class="timeline-unparseable-icon">⚠️</span>
+          <span class="timeline-unparseable-label">Shows with unrecognized dates (${unparseableShows.length}):</span>
+        </div>
+        <select class="timeline-unparseable-select" id="timeline-unparseable-select">
+          <option value="">Select a show...</option>
+    `;
+    
+    unparseableShows.forEach(show => {
+      html += `<option value="${escapeHtml(show.path)}">${escapeHtml(show.label)}</option>`;
+    });
+    
+    html += `
+        </select>
+      </div>
+    `;
+  }
+  
+  showBrowserElements.showTimeline.innerHTML = html;
+  
+  // Add click event listeners to all cards
+  const cards = showBrowserElements.showTimeline.querySelectorAll('.show-card');
+  cards.forEach(card => {
+    card.addEventListener('click', () => {
+      const showPath = card.getAttribute('data-path');
+      loadShowContent(showPath);
+    });
+  });
+  
+  // Add event listener for unparseable shows dropdown
+  if (unparseableShows.length > 0) {
+    const unparseableSelect = document.getElementById('timeline-unparseable-select');
+    if (unparseableSelect) {
+      unparseableSelect.addEventListener('change', () => {
+        const selectedPath = unparseableSelect.value;
+        if (selectedPath) {
+          loadShowContent(selectedPath);
+          // Reset dropdown after selection
+          setTimeout(() => {
+            unparseableSelect.value = '';
+          }, 100);
+        }
+      });
+    }
+  }
+}
+
+// Parse show metadata from folder name
+function parseShowMetadata(label) {
+  let venue = '';
+  let city = '';
+  let shnid = '';
+  let recordingType = '';
+  let bitrate = '';
+  
+  // Extract shnid (number after date)
+  const shnidMatch = label.match(/\.(\d+)\./);
+  if (shnidMatch) shnid = shnidMatch[1];
+  
+  // Extract recording type (sbd, aud, mtx, etc.)
+  if (label.match(/\.sbd\./i)) recordingType = 'SBD';
+  else if (label.match(/\.aud\./i)) recordingType = 'AUD';
+  else if (label.match(/\.mtx\./i)) recordingType = 'MTX';
+  else if (label.match(/ultramatrix/i)) recordingType = 'Ultramatrix';
+  else if (label.match(/\bSBD\b/i)) recordingType = 'SBD';
+  else if (label.match(/\.ecm\d+p\./i)) recordingType = 'AUD';
+  
+  // Extract bitrate
+  if (label.match(/flac24/i)) bitrate = '24-bit';
+  else if (label.match(/flac16/i)) bitrate = '16-bit';
+  else if (label.match(/t-flac2448/i)) bitrate = '24-bit';
+  
+  // Try to extract venue from remaining text
+  // Handle both hyphen and dot date separators
+  const remaining = label
+    .replace(/gd?\d{2,4}[-\.]\d{2}[-\.]\d{2}\.?/, '') // Remove date
+    .replace(/gd?\d{2,4}[-\.]\d{2}[-\.]xx\.?/i, '') // Remove date with xx
+    .replace(/\d{4}[-\.]\d{2}[-\.]\d{2},\d+/, '') // Remove multiple dates
+    .replace(/\.\d+\..*?\..*?\.flac\d+/, ''); // Remove other metadata
+    
+  if (remaining && remaining.length > 0) {
+    // Clean up the venue name
+    venue = remaining
+      .replace(/_/g, ' ')
+      .replace(/\./g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    // Try to extract city (usually after venue)
+    // Look for patterns like "Boston MA" or "Ithaca NY"
+    const cityMatch = venue.match(/([A-Z][a-z]+)\s+([A-Z]{2})$/);
+    if (cityMatch) {
+      city = cityMatch[0];
+      venue = venue.replace(cityMatch[0], '').trim();
+    }
+  }
+  
+  return { venue, city, shnid, recordingType, bitrate };
+}
+
+// Format date for display
+function formatDate(dateStr) {
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                  'July', 'August', 'September', 'October', 'November', 'December'];
+  const [year, month, day] = dateStr.split('-');
+  const monthName = months[parseInt(month, 10) - 1];
+  return `${monthName} ${parseInt(day, 10)}, ${year}`;
+}
+
+// Format date short for card display
+function formatDateShort(dateStr) {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const [year, month, day] = dateStr.split('-');
+  const monthName = months[parseInt(month, 10) - 1];
+  return `${monthName} ${parseInt(day, 10)}, ${year}`;
+}
+
+// Show tooltip for timeline dot
+function showTimelineTooltip(event, dot) {
+  const date = dot.getAttribute('data-date');
+  const label = dot.getAttribute('data-label');
+  
+  // Parse show info from label
+  // Supports both 2-digit (gd77-05-04) and 4-digit (gd1977-05-04) year formats
+  const parts = label.match(/gd(\d{2,4})-(\d{2})-(\d{2})\.(\d+)\.(.*?)\.flac(\d+)/i) || 
+                label.match(/gd?(\d{2,4})-(\d{2})-(\d{2})(.*)/);
+  
+  let venue = 'Venue info not available';
+  let shnid = '';
+  let recordingType = '';
+  let bitrate = '';
+  
+  if (parts) {
+    // Try to extract venue from remaining text
+    const remaining = label.replace(/gd?\d{2,4}-\d{2}-\d{2}\./, '').replace(/\.\d+\..*?\..*?\.flac\d+/, '');
+    if (remaining && remaining.length > 0) {
+      venue = remaining.replace(/_/g, ' ').replace(/\./g, ' ');
+    }
+    
+    // Extract shnid (number after date)
+    const shnidMatch = label.match(/\.(\d+)\./);
+    if (shnidMatch) shnid = shnidMatch[1];
+    
+    // Extract recording type (sbd, aud, mtx, etc.)
+    if (label.match(/\.sbd\./i)) recordingType = 'SBD';
+    else if (label.match(/\.aud\./i)) recordingType = 'AUD';
+    else if (label.match(/\.mtx\./i)) recordingType = 'MTX';
+    else if (label.match(/ultramatrix/i)) recordingType = 'Ultramatrix';
+    else if (label.match(/\bSBD\b/i)) recordingType = 'SBD';
+    
+    // Extract bitrate
+    if (label.match(/flac24/i)) bitrate = '24-bit';
+    else if (label.match(/flac16/i)) bitrate = '16-bit';
+  }
+  
+  // Create tooltip element
+  const tooltip = document.createElement('div');
+  tooltip.className = 'timeline-tooltip';
+  tooltip.id = 'timeline-tooltip';
+  
+  let tooltipContent = `<div class="timeline-tooltip-date">${date}</div>`;
+  if (venue !== 'Venue info not available') {
+    tooltipContent += `<div class="timeline-tooltip-venue">${venue}</div>`;
+  }
+  
+  let metaInfo = '';
+  if (recordingType) metaInfo += `<span class="timeline-tooltip-badge">${recordingType}</span>`;
+  if (bitrate) metaInfo += `<span class="timeline-tooltip-badge">${bitrate}</span>`;
+  if (shnid) metaInfo += `<span class="timeline-tooltip-badge">shnid: ${shnid}</span>`;
+  
+  if (metaInfo) {
+    tooltipContent += `<div class="timeline-tooltip-meta">${metaInfo}</div>`;
+  }
+  
+  tooltip.innerHTML = tooltipContent;
+  document.body.appendChild(tooltip);
+  
+  // Position tooltip near cursor
+  positionTooltip(event, tooltip);
+  
+  // Update position on mouse move
+  dot.addEventListener('mousemove', (e) => {
+    positionTooltip(e, tooltip);
+  });
+}
+
+// Position tooltip near cursor
+function positionTooltip(event, tooltip) {
+  const offset = 15;
+  let left = event.clientX + offset;
+  let top = event.clientY + offset;
+  
+  // Keep tooltip on screen
+  const tooltipRect = tooltip.getBoundingClientRect();
+  if (left + tooltipRect.width > window.innerWidth) {
+    left = event.clientX - tooltipRect.width - offset;
+  }
+  if (top + tooltipRect.height > window.innerHeight) {
+    top = event.clientY - tooltipRect.height - offset;
+  }
+  
+  tooltip.style.left = `${left}px`;
+  tooltip.style.top = `${top}px`;
+}
+
+// Hide timeline tooltip
+function hideTimelineTooltip() {
+  const tooltip = document.getElementById('timeline-tooltip');
+  if (tooltip) {
+    tooltip.remove();
+  }
+}
+
+// Escape HTML to prevent XSS
+function escapeHtml(text) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, m => map[m]);
 }
 
 // Load show content (text files and audio files)
@@ -300,14 +659,7 @@ async function loadShowContent(showPath) {
     showBrowserElements.showContent.style.display = 'block';
     showBrowserElements.noShowSelected.style.display = 'none';
     
-    // Show the setlist section in the left column
-    const setlistSection = document.getElementById('setlist-section');
-    if (setlistSection) {
-      setlistSection.style.display = 'block';
-    }
-    
     showBrowserElements.textFileContent.textContent = 'Loading show content...';
-    showBrowserElements.trackList.textContent = 'Loading tracks...';
     
     const response = await fetch(`/api/show-content?path=${encodeURIComponent(showPath)}`);
     const data = await response.json();
@@ -317,31 +669,30 @@ async function loadShowContent(showPath) {
       return;
     }
     
-    // Update the play button image using 3-tier priority system
+    // Update the play button image if artwork is available
     const playButtonImg = showBrowserElements.playConcert.querySelector('img');
     if (data.artwork) {
       if (data.artwork.type === 'embedded') {
         // Use embedded FLAC artwork
         playButtonImg.src = data.artwork.dataUri;
-        playButtonImg.alt = `Embedded artwork from ${data.artwork.source} - Click to Play Show`;
+        playButtonImg.alt = `Embedded artwork from ${data.artwork.source}`;
+        console.log('📀 Using embedded FLAC artwork');
       } else if (data.artwork.type === 'file') {
         // Use folder image file
         playButtonImg.src = `/api/image?path=${encodeURIComponent(data.artwork.path)}`;
-        playButtonImg.alt = 'Custom show image - Click to Play Show';
+        playButtonImg.alt = 'Show artwork';
+        console.log('🖼️ Using folder image:', data.artwork.path);
       }
     } else {
-      // Default image based on selected library
-      const selectedArtistName = showBrowserElements.artistSelect.options[showBrowserElements.artistSelect.selectedIndex].text;
-      if (selectedArtistName === 'Other Flac') {
-        playButtonImg.src = '/images/tickets.jpeg';
-        playButtonImg.alt = 'Tickets - Click to Play Show';
-      } else {
-        playButtonImg.src = '/images/hamptonTicket.jpg';
-        playButtonImg.alt = 'Hampton Ticket - Click to Play Show';
-      }
+      // Use static default image
+      playButtonImg.src = '/images/hamptonTicket.jpg';
+      playButtonImg.alt = 'Hampton Ticket';
+      console.log('🎫 No artwork found, using default ticket');
     }
     
-    // Update text files dropdown
+    // Update text files dropdown and auto-select best file
+    let autoSelectFile = null;
+    
     if (data.textFiles && data.textFiles.length > 0) {
       showBrowserElements.textFileSelect.innerHTML = '<option value="">Select a text file</option>';
       data.textFiles.forEach(file => {
@@ -350,25 +701,41 @@ async function loadShowContent(showPath) {
         option.textContent = `${file.filename} (${file.size})`;
         showBrowserElements.textFileSelect.appendChild(option);
       });
+      
+      // Smart auto-selection logic
+      if (data.textFiles.length === 1) {
+        // Only one file - automatically select it
+        autoSelectFile = data.textFiles[0].path;
+        console.log('📄 Auto-selecting only text file:', data.textFiles[0].filename);
+      } else {
+        // Multiple files - try to find best match
+        // Extract folder name from show path
+        const folderName = showPath.split('/').pop().toLowerCase();
+        
+        // Try to find a file that matches the folder name
+        const matchingFile = data.textFiles.find(file => {
+          const fileName = file.filename.toLowerCase().replace(/\.txt$/i, '');
+          return folderName.includes(fileName) || fileName.includes(folderName.split('.')[0]);
+        });
+        
+        if (matchingFile) {
+          autoSelectFile = matchingFile.path;
+          console.log('📄 Auto-selecting matching text file:', matchingFile.filename);
+        } else {
+          // No match found, select first file as fallback
+          autoSelectFile = data.textFiles[0].path;
+          console.log('📄 Auto-selecting first text file:', data.textFiles[0].filename);
+        }
+      }
+      
+      // Set the dropdown value and load the file
+      if (autoSelectFile) {
+        showBrowserElements.textFileSelect.value = autoSelectFile;
+        loadTextFileContent(autoSelectFile);
+      }
     } else {
       showBrowserElements.textFileSelect.innerHTML = '<option value="">No text files found</option>';
-    }
-    
-    // Update track list with individual elements for now playing highlighting
-    if (data.trackOrder && data.trackOrder.length > 0) {
-      // Clear existing content
-      showBrowserElements.trackList.innerHTML = '';
-      
-      // Create individual track elements
-      data.trackOrder.forEach((track) => {
-        const trackElement = document.createElement('div');
-        trackElement.className = 'track-item';
-        trackElement.setAttribute('data-path', track.path);
-        trackElement.textContent = `${track.number}. ${track.name}`;
-        showBrowserElements.trackList.appendChild(trackElement);
-      });
-    } else {
-      showBrowserElements.trackList.textContent = 'No audio files found';
+      showBrowserElements.textFileContent.textContent = 'No text files available for this show';
     }
     
     // Store playlist for the play button
@@ -492,37 +859,28 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (showBrowserElements.artistSelect) {
     showBrowserElements.artistSelect.addEventListener('change', () => {
       const selectedArtistPath = showBrowserElements.artistSelect.value;
-      const selectedArtistName = showBrowserElements.artistSelect.options[showBrowserElements.artistSelect.selectedIndex].text;
-      const playButtonImg = showBrowserElements.playConcert.querySelector('img');
-
-      if (selectedArtistName === 'Other Flac') {
-        playButtonImg.src = '/images/tickets.jpeg';
-        playButtonImg.alt = 'Tickets - Click to Play Show';
-      } else {
-        playButtonImg.src = '/images/hamptonTicket.jpg';
-        playButtonImg.alt = 'Hampton Ticket - Click to Play Show';
-      }
 
       if (selectedArtistPath) {
         loadArtistContent(selectedArtistPath);
       } else {
-        // Reset and disable year/show selects if no artist is chosen
-        showBrowserElements.yearSelect.innerHTML = '<option value="">Select a library first</option>';
-        showBrowserElements.yearSelect.disabled = true;
+        // Reset UI if no artist is chosen
+        showBrowserElements.yearCarouselContainer.style.display = 'none';
+        showBrowserElements.yearCarousel.innerHTML = '';
+        showBrowserElements.artistDropdownContainer.style.display = 'none';
+        showBrowserElements.artistDropdown.innerHTML = '<option value="">Select a library first</option>';
         showBrowserElements.showSelect.innerHTML = '<option value="">Select a library first</option>';
         showBrowserElements.showSelect.disabled = true;
-        showBrowserElements.yearSelect.parentElement.style.display = 'block'; // Show year select again
       }
     });
   }
   
-  if (showBrowserElements.yearSelect) {
-    showBrowserElements.yearSelect.addEventListener('change', () => {
-      const selectedYear = showBrowserElements.yearSelect.value;
-      if (selectedYear) {
-        loadShows(selectedYear);
+  if (showBrowserElements.artistDropdown) {
+    showBrowserElements.artistDropdown.addEventListener('change', () => {
+      const selectedArtist = showBrowserElements.artistDropdown.value;
+      if (selectedArtist) {
+        loadShows(selectedArtist);
       } else {
-        showBrowserElements.showSelect.innerHTML = '<option value="">Select a year first</option>';
+        showBrowserElements.showSelect.innerHTML = '<option value="">Select an artist first</option>';
         showBrowserElements.showSelect.disabled = true;
       }
     });
@@ -536,12 +894,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       } else {
         showBrowserElements.showContent.style.display = 'none';
         showBrowserElements.noShowSelected.style.display = 'block';
-        
-        // Hide the setlist section when no show is selected
-        const setlistSection = document.getElementById('setlist-section');
-        if (setlistSection) {
-          setlistSection.style.display = 'none';
-        }
       }
     });
   }
@@ -574,62 +926,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (analysisCheckContainer) {
     analysisCheckContainer.style.display = 'none';
   }
-
-  // --- Now Playing Polling ---
-  let nowPlayingPath = null;
-  const trackListContainer = document.getElementById('track-list');
-
-  async function updateNowPlaying() {
-    try {
-      const response = await fetch('/api/now-playing');
-      const data = await response.json();
-
-      // --- Enhanced Debugging ---
-      if (data.isPlaying) {
-        console.log("Foobar is playing:", data.path);
-        console.log("Available track elements:");
-        const trackElements = trackListContainer.querySelectorAll('div[data-path]');
-        trackElements.forEach(trackEl => {
-          console.log("  Track path:", trackEl.dataset.path);
-        });
-        console.log("Looking for exact match...");
-      }
-      // --- End Debugging ---
-
-      if (data.isPlaying && data.path !== nowPlayingPath) {
-        nowPlayingPath = data.path;
-        
-        // Remove existing highlights
-        const existingHighlights = trackListContainer.querySelectorAll('.now-playing');
-        existingHighlights.forEach(el => el.classList.remove('now-playing'));
-        
-        // Find and highlight the new track
-        const trackElements = trackListContainer.querySelectorAll('div[data-path]');
-        let foundMatch = false;
-        trackElements.forEach(trackEl => {
-          if (trackEl.dataset.path === nowPlayingPath) {
-            trackEl.classList.add('now-playing');
-            foundMatch = true;
-            console.log("✅ Found matching track and applied highlight!");
-          }
-        });
-        
-        if (!foundMatch) {
-          console.log("❌ No matching track found for path:", nowPlayingPath);
-        }
-
-      } else if (!data.isPlaying && nowPlayingPath) {
-        // Music stopped, remove highlights
-        nowPlayingPath = null;
-        const existingHighlights = trackListContainer.querySelectorAll('.now-playing');
-        existingHighlights.forEach(el => el.classList.remove('now-playing'));
-      }
-    } catch (error) {
-      console.error('Error fetching now playing data:', error);
-    }
-  }
-
-  // Start polling every 2 seconds
-  setInterval(updateNowPlaying, 2000);
 
 });
