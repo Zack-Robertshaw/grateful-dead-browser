@@ -376,10 +376,8 @@ function renderMonthlyTimeline(shows, year) {
       
       if (showYear === year) {
         parseableShows.push({
-          path: show.path,
-          label: show.label,
-          date: `${showYear}-${month}-${day}`,
-          ...parseShowMetadata(show.label)
+          ...show, // Include all server metadata (city, state, venue, recordingType, bitrate, shnid)
+          date: `${showYear}-${month}-${day}` // Override with parsed date from folder name
         });
       }
     } else {
@@ -401,13 +399,37 @@ function renderMonthlyTimeline(shows, year) {
   
   // Add cards for each parseable show
   parseableShows.forEach(show => {
-    // Create venue text - use folder label if no venue extracted
-    const venueText = show.venue || show.label.replace(/gd?\d{2,4}-\d{2}-\d{2}\./, '').replace(/\s+/g, ' ').trim();
+    // Build venue display text with improved formatting
+    let venueText = '';
+    
+    // Check if we have parsed city/state data
+    if (show.city || show.state || show.venue) {
+      if (show.venue) {
+        // Has venue name
+        venueText = escapeHtml(show.venue);
+        
+        // Add city/state if available
+        if (show.city || show.state) {
+          const location = [show.city, show.state].filter(Boolean).join(', ');
+          venueText += ` • <span class="show-card-location">${escapeHtml(location)}</span>`;
+        }
+      } else if (show.city || show.state) {
+        // No venue, but has city/state
+        const location = [show.city, show.state].filter(Boolean).join(', ');
+        venueText = `<span class="show-card-location">${escapeHtml(location)}</span>`;
+      }
+      
+      // Add folder name after metadata
+      venueText += ` • ${escapeHtml(show.label)}`;
+    } else {
+      // No metadata - just show folder name
+      venueText = escapeHtml(show.label);
+    }
     
     html += `
       <div class="show-card" data-path="${escapeHtml(show.path)}">
         <div class="show-card-date">${formatDateShort(show.date)}</div>
-        <div class="show-card-venue">${escapeHtml(venueText)}</div>
+        <div class="show-card-venue">${venueText}</div>
         <div class="show-card-meta">
           ${show.recordingType ? `<span class="show-card-badge recording-type">${escapeHtml(show.recordingType)}</span>` : ''}
           ${show.bitrate ? `<span class="show-card-badge bitrate">${escapeHtml(show.bitrate)}</span>` : ''}

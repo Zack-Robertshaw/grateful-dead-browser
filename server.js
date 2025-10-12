@@ -7,7 +7,7 @@ const { parse } = require('csv-parse');
 const dayjs = require('dayjs');
 const { extractDatesFromFolders } = require('./utils/extractDates');
 const { combineShowTables } = require('./utils/combineShows');
-const { findTextFiles, readTextFile, findAudioFiles, findImageFile, formatFileSize, findShowArtwork } = require('./utils/fileUtils');
+const { findTextFiles, readTextFile, findAudioFiles, findImageFile, formatFileSize, findShowArtwork, extractShowMetadata } = require('./utils/fileUtils');
 const { spawn, exec } = require('child_process');
 const axios = require('axios');
 
@@ -276,7 +276,7 @@ app.get('/api/years', (req, res) => {
 });
 
 // API endpoint to get shows for a year or artist subfolder
-app.get('/api/shows/:folderName', (req, res) => {
+app.get('/api/shows/:folderName', async (req, res) => {
   try {
     const { folderPath } = req.query;
     
@@ -300,11 +300,20 @@ app.get('/api/shows/:folderName', (req, res) => {
       .filter(Boolean)
       .sort((a, b) => a.name.localeCompare(b.name));
     
+    // Extract metadata from each show folder
+    const showsWithMetadata = await Promise.all(
+      showFolders.map(async (folder) => {
+        const metadata = await extractShowMetadata(folder.path, folder.name);
+        return {
+          label: folder.name,
+          path: folder.path,
+          ...metadata
+        };
+      })
+    );
+    
     return res.json({
-      shows: showFolders.map(folder => ({
-        label: folder.name,
-        path: folder.path
-      }))
+      shows: showsWithMetadata
     });
   } catch (error) {
     console.error('Error fetching shows:', error);

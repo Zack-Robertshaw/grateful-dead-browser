@@ -550,6 +550,11 @@ h4 {
   text-overflow: ellipsis;
 }
 
+.show-card-location {
+  color: var(--stealie-blue);
+  font-weight: 700;
+}
+
 .show-card-city {
   display: none;
 }

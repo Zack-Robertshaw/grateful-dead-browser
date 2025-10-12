@@ -301,6 +301,137 @@ async function findShowArtwork(folderPath) {
   return null;
 }
 
+/**
+ * Extract show metadata from FLAC tags
+ * Parses ALBUM tag format: "YYYY-MM-DD City, State TYPE (shnid) [bitrate]"
+ * Or from folder name as fallback
+ */
+async function extractShowMetadata(folderPath, folderName) {
+  try {
+    const mm = require('music-metadata');
+    
+    // Find first FLAC file
+    const flacFiles = findAudioFiles(folderPath)
+      .filter(file => file.format.toLowerCase() === 'flac')
+      .filter(file => !file.filename.startsWith('._'));
+    
+    if (flacFiles.length === 0) {
+      console.log(`No FLAC files found in ${folderPath}, parsing folder name`);
+      return parseFolderName(folderName);
+    }
+    
+    // Read metadata from first FLAC file
+    const metadata = await mm.parseFile(flacFiles[0].full_path);
+    const album = metadata.common.album || folderName;
+    const date = metadata.common.date || metadata.common.year;
+    
+    // Parse the ALBUM tag
+    const parsed = parseAlbumTag(album, date);
+    
+    return {
+      ...parsed,
+      folderName,
+      folderPath
+    };
+    
+  } catch (error) {
+    console.error(`Error reading FLAC metadata from ${folderPath}:`, error.message);
+    // Fallback to folder name parsing
+    return parseFolderName(folderName);
+  }
+}
+
+/**
+ * Parse ALBUM tag format: "YYYY-MM-DD City, State TYPE (shnid) [bitrate]"
+ * Example: "1987-07-02 Red Rocks Amphitheatre, Morrison, CO SBD (12345) [24-96]"
+ */
+function parseAlbumTag(album, date) {
+  const result = {
+    date: null,
+    venue: null,
+    city: null,
+    state: null,
+    recordingType: null,
+    shnid: null,
+    bitrate: null
+  };
+  
+  // Extract date (YYYY-MM-DD at start or from DATE tag)
+  const dateMatch = album.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (dateMatch) {
+    result.date = dateMatch[1];
+  } else if (date) {
+    result.date = date;
+  }
+  
+  // Remove date from string for further parsing
+  let remaining = album.replace(/^\d{4}-\d{2}-\d{2}\s*/, '');
+  
+  // Extract shnid from (####)
+  const shnidMatch = remaining.match(/\((\d+)\)/);
+  if (shnidMatch) {
+    result.shnid = shnidMatch[1];
+    remaining = remaining.replace(/\(\d+\)/, '').trim();
+  }
+  
+  // Extract bitrate from [##-##] or [##]
+  const bitrateMatch = remaining.match(/\[([^\]]+)\]/);
+  if (bitrateMatch) {
+    result.bitrate = bitrateMatch[1];
+    remaining = remaining.replace(/\[[^\]]+\]/, '').trim();
+  }
+  
+  // Extract recording type (SBD, AUD, MTX, etc.) - usually before parentheses
+  const typeMatch = remaining.match(/\b(SBD|AUD|MTX|MATRIX|PCM|FM)\b/i);
+  if (typeMatch) {
+    result.recordingType = typeMatch[1].toUpperCase();
+    remaining = remaining.replace(/\b(SBD|AUD|MTX|MATRIX|PCM|FM)\b/i, '').trim();
+  }
+  
+  // What's left should be venue and location
+  // Format can be: "Venue, City, ST" or "Venue City, ST" or "City, ST"
+  remaining = remaining.replace(/\s+/g, ' ').trim();
+  
+  // Try to extract state (2-letter code at end)
+  const stateMatch = remaining.match(/,\s*([A-Z]{2})$/);
+  if (stateMatch) {
+    result.state = stateMatch[1];
+    remaining = remaining.replace(/,\s*[A-Z]{2}$/, '').trim();
+  }
+  
+  // Try to extract city (last part before state)
+  const cityMatch = remaining.match(/,\s*([^,]+)$/);
+  if (cityMatch) {
+    result.city = cityMatch[1].trim();
+    remaining = remaining.replace(/,\s*[^,]+$/, '').trim();
+  } else if (remaining && !result.city) {
+    // No comma found, so what remains is the city (not a venue)
+    result.city = remaining;
+    remaining = '';
+  }
+  
+  // What remains is the venue
+  if (remaining) {
+    result.venue = remaining.trim();
+  }
+  
+  return result;
+}
+
+/**
+ * Fallback: Parse folder name when FLAC metadata is not available
+ */
+function parseFolderName(folderName) {
+  // Try to parse using similar logic as ALBUM tag
+  const parsed = parseAlbumTag(folderName, null);
+  
+  return {
+    ...parsed,
+    venue: parsed.venue || folderName,
+    folderName
+  };
+}
+
 module.exports = {
   findTextFiles,
   readTextFile,
@@ -308,5 +439,6 @@ module.exports = {
   formatFileSize,
   findImageFile,
   extractFlacArtwork,
-  findShowArtwork
+  findShowArtwork,
+  extractShowMetadata
 };
