@@ -417,7 +417,7 @@ h4 {
 
 /* Year Carousel Styles */
 .year-timeline {
-  background-color: rgba(230, 230, 230, 0.7);
+  background-color: rgba(30, 77, 139, 0.5);
   border-radius: 3px;
   padding: 5px;
   margin-top: 3px;
@@ -426,7 +426,7 @@ h4 {
 
 .year-carousel {
   padding: 3px;
-  background: linear-gradient(to bottom, rgba(200, 200, 200, 0.4), rgba(210, 210, 210, 0.5));
+  background: linear-gradient(to bottom, rgba(26, 67, 121, 0.5), rgba(33, 77, 143, 0.5));
   border-radius: 3px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
@@ -434,7 +434,7 @@ h4 {
 }
 
 .year-card {
-  background: #e8e8e8;
+  background: rgba(30, 77, 139, 0.5);
   border-radius: 2px;
   padding: 6px 4px;
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
@@ -447,15 +447,15 @@ h4 {
   text-align: center;
   font-size: 11px;
   font-weight: 700;
-  color: var(--stealie-blue) !important;
+  color: white !important;
   min-height: 30px;
 }
 
 .year-card:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(1, 55, 116, 0.4); /* Uses old stealie-blue #013774 with 40% opacity */
+  box-shadow: 0 2px 4px rgba(30, 77, 139, 0.6);
   border-left-color: var(--gd-red) !important;
-  background: #d8d8d8;
+  background: #214d8f;
 }
 
 .year-card.selected {
@@ -468,7 +468,7 @@ h4 {
 
 /* Card Carousel Styles */
 .show-timeline {
-  background-color: rgba(230, 230, 230, 0.7);
+  background-color: rgba(30, 77, 139, 0.5);
   border-radius: 3px;
   padding: 5px;
   margin-top: 3px;
@@ -482,7 +482,7 @@ h4 {
   scroll-snap-type: y mandatory;
   scroll-behavior: smooth;
   padding: 3px;
-  background: linear-gradient(to bottom, rgba(200, 200, 200, 0.4), rgba(210, 210, 210, 0.5));
+  background: linear-gradient(to bottom, rgba(26, 67, 121, 0.5), rgba(33, 77, 143, 0.5));
   border-radius: 3px;
   position: relative;
 }

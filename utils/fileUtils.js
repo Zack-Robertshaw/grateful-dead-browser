@@ -192,6 +192,7 @@ function findImageFile(folderPath) {
 
     for (const item of rootItems) {
       if (item.name.startsWith('.')) continue; // Ignore hidden files
+      if (item.name.toLowerCase() === 'folder.jpg') continue; // Ignore auto-generated folder.jpg files
       const itemPath = path.join(folderPath, item.name);
       if (item.isFile()) {
         const ext = path.extname(item.name).toLowerCase();
@@ -207,6 +208,7 @@ function findImageFile(folderPath) {
       const items = getCachedDirContents(subdir);
       for (const item of items) {
         if (item.name.startsWith('.')) continue; // Ignore hidden files
+        if (item.name.toLowerCase() === 'folder.jpg') continue; // Ignore auto-generated folder.jpg files
         if (item.isFile()) {
           const ext = path.extname(item.name).toLowerCase();
           if (imageExtensions.has(ext)) {
