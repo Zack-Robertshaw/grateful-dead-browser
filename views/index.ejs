@@ -459,6 +459,7 @@
             <ul>
               <li><strong>Dynamic Library Browsing:</strong> The interface adapts to your library's structure, whether it's organized by year (for the Grateful Dead) or by artist.</li>
               <li><strong>One-Click Playback:</strong> Seamlessly play entire albums or shows in foobar2000 with perfect, gapless track ordering.</li>
+              <li><strong>Rich Metadata Display:</strong> Automatically extracts and displays venue, city, state, recording type (SBD/AUD), bitrate, and shnid from FLAC file metadata.</li>
               <li><strong>Grateful Dead Folder Analysis:</strong> A specialized tool that scans your Grateful Dead collection to provide detailed statistics and coverage information.</li>
               <li><strong>Built-in Grateful Dead Database:</strong> Includes data for 2,087 verified shows, ensuring accurate analysis and browsing.</li>
               <li><strong>Text File Viewer:</strong> Read setlists and other notes included with your music files.</li>
@@ -478,6 +479,30 @@
             <p>
               The built-in Grateful Dead show database is sourced from the comprehensive **"Every Time Played" Excel spreadsheet**, a valuable resource for collectors, available at 
               <a href="https://www.gratefuldeadbook.com/product-page/every-time-played-excel-spreadsheet" target="_blank" class="text-decoration-none">gratefuldeadbook.com</a>.
+            </p>
+            
+            <h3 class="mt-4">FLAC Metadata</h3>
+            <p>
+              This application reads rich metadata from FLAC file tags to enhance your browsing experience. The metadata displayed includes:
+            </p>
+            <ul>
+              <li><strong>Date:</strong> Show date extracted from ALBUM tag or DATE field</li>
+              <li><strong>Venue:</strong> Performance venue name</li>
+              <li><strong>Location:</strong> City and state</li>
+              <li><strong>Recording Type:</strong> Source information (SBD, AUD, MTX, etc.)</li>
+              <li><strong>Bitrate:</strong> Sample rate and bit depth (e.g., 24-96)</li>
+              <li><strong>Shnid:</strong> Archive.org/etree identifier</li>
+            </ul>
+            
+            <h4 class="mt-3">Adding Metadata to Your FLAC Files</h4>
+            <p>
+              If your FLAC files don't have metadata embedded yet, you can use the excellent 
+              <a href="https://github.com/mjungebl/etree_tag" target="_blank" class="text-decoration-none">Concert Tagger</a> 
+              tool by <a href="https://github.com/mjungebl" target="_blank" class="text-decoration-none">@mjungebl</a>. 
+              This Python utility matches your local FLAC concert folders with the Etree database and automatically tags audio files with comprehensive show metadata.
+            </p>
+            <p>
+              <strong>Note:</strong> The show browser gracefully handles folders with or without embedded metadata, falling back to folder name parsing when metadata isn't available.
             </p>
           </div>
         </div>
