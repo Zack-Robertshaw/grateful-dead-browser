@@ -9,6 +9,7 @@ A flexible Node.js application for browsing and playing your local music collect
 -   📂 **Smart Folder Analysis**: Intelligently scans and processes your Grateful Dead library to provide detailed statistics and show information.
 -   🗓️ **Built-in Grateful Dead Show Database**: Includes a comprehensive database of 2,087 verified shows, ensuring accurate metadata and analysis.
 -   📝 **Text File Viewer**: Easily view setlists, liner notes, and other text files associated with your music.
+-   🎯 **Rich Metadata Display**: Automatically extracts and displays venue, city, state, recording type (SBD/AUD), bitrate, and shnid from FLAC file metadata.
 -   ⚡ **Optimized for Performance**: Features file caching and efficient processing for a smooth and responsive experience.
 
 ## How It Works
@@ -82,12 +83,36 @@ From there, you can use the "Show Browser" tab to explore your music collection 
 
 ## foobar2000 Integration
 
-The application’s integration with foobar2000 provides a superior listening experience:
+The application's integration with foobar2000 provides a superior listening experience:
 
 -   **Perfect Track Ordering**: Plays files in the correct sequence automatically.
 -   **Gapless Playback**: Enjoy seamless transitions between tracks.
 -   **High-Quality Audio**: Optimized for lossless formats like FLAC.
 -   **Smart Process Management**: Automatically closes the previous show before starting a new one.
+
+## FLAC Metadata
+
+This application reads rich metadata from FLAC file tags to enhance your browsing experience. The metadata includes:
+
+-   **Date**: Show date extracted from ALBUM tag or DATE field
+-   **Venue**: Performance venue name
+-   **Location**: City and state
+-   **Recording Type**: Source information (SBD, AUD, MTX, etc.)
+-   **Bitrate**: Sample rate and bit depth (e.g., 24-96)
+-   **Shnid**: Archive.org/etree identifier
+
+### Adding Metadata to Your FLAC Files
+
+If your FLAC files don't have metadata embedded yet, you can use the excellent [Concert Tagger](https://github.com/mjungebl/etree_tag) tool by [@mjungebl](https://github.com/mjungebl). This Python utility:
+
+-   Matches your local FLAC concert folders with the Etree database
+-   Automatically tags audio files with comprehensive show metadata
+-   Embeds artwork according to artist-specific rules
+-   Verifies checksums to ensure accurate matching
+
+Special thanks to [@mjungebl](https://github.com/mjungebl) for creating and maintaining this invaluable tagging tool!
+
+**Note**: The show browser gracefully handles folders with or without embedded metadata, falling back to folder name parsing when metadata isn't available.
 
 ## License
 

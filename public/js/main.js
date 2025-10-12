@@ -350,11 +350,11 @@ function renderMonthlyTimeline(shows, year) {
   shows.forEach(show => {
     // Try to extract date from folder name
     // Supports: gd77-05-04, gd1977-05-04, 1977-05-04, 1974.06.20, gd74-01-xx, 1974-09-09,10,11
-    let dateMatch = show.label.match(/gd?(\d{2,4})[-.](\d{2})[-.](\d{2})/); // With hyphens or dots
+    let dateMatch = show.label.match(/(?:gd)?(\d{2,4})[-.](\d{2})[-.](\d{2})/); // With hyphens or dots
     
     // Handle "xx" wildcard day (e.g., gd74-01-xx)
     if (!dateMatch) {
-      dateMatch = show.label.match(/gd?(\d{2,4})[-.](\d{2})[-.]xx/i);
+      dateMatch = show.label.match(/(?:gd)?(\d{2,4})[-.](\d{2})[-.]xx/i);
       if (dateMatch) {
         // Use day 01 as placeholder for "xx"
         dateMatch = [dateMatch[0], dateMatch[1], dateMatch[2], '01'];

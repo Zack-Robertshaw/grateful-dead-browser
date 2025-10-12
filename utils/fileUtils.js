@@ -38,6 +38,10 @@ function findTextFiles(folderPath) {
     const subdirs = [];
     
     for (const item of rootItems) {
+      // Skip hidden files (starting with . or ._) and shntool files
+      if (item.name.startsWith('.')) continue;
+      if (item.name.toLowerCase().includes('shntool')) continue;
+      
       const itemPath = path.join(folderPath, item.name);
       
       if (item.isFile() && path.extname(item.name).toLowerCase() === '.txt') {
@@ -59,6 +63,10 @@ function findTextFiles(folderPath) {
       const items = getCachedDirContents(subdir);
       
       for (const item of items) {
+        // Skip hidden files (starting with . or ._) and shntool files
+        if (item.name.startsWith('.')) continue;
+        if (item.name.toLowerCase().includes('shntool')) continue;
+        
         if (item.isFile() && path.extname(item.name).toLowerCase() === '.txt') {
           const itemPath = path.join(subdir, item.name);
           const stats = fs.statSync(itemPath);
